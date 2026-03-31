@@ -207,48 +207,29 @@ export default function KapasitasPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <SummaryCard
-          label="Order Aktif"
-          value={totalActiveOrders}
-          sub="dalam antrian"
-          color="indigo"
-          icon="📋"
-        />
-        <SummaryCard
-          label="Total Pcs Antrian"
-          value={totalPcsQueued}
-          sub="belum selesai"
-          color="blue"
-          icon="👕"
-        />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <SummaryCard label="Order Aktif" value={totalActiveOrders} sub="dalam antrian" color="indigo" />
+        <SummaryCard label="Total Pcs Antrian" value={totalPcsQueued} sub="belum selesai" color="blue" />
         <SummaryCard
           label="Kapasitas Hari Ini"
           value={todayAlloc?.normalQty ?? 0}
           sub={`normal ${todayAlloc?.normalPct ?? 0}% · extend ${todayAlloc?.extendQty ?? 0} pcs`}
           color={!todayAlloc || todayAlloc.normalQty === 0 ? 'green' : todayAlloc.isExtendFull ? 'red' : todayAlloc.isFull ? 'orange' : todayAlloc.isNearFull ? 'amber' : 'green'}
-          icon="📅"
         />
-        <SummaryCard
-          label="Hari Produksi"
-          value={daysNeeded}
-          sub="hari terisi"
-          color="purple"
-          icon="🗓️"
-        />
+        <SummaryCard label="Hari Produksi" value={daysNeeded} sub="hari terisi" color="purple" />
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap">
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" /> Normal 1–149</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-amber-400 inline-block" /> ⚠ Mendekati penuh 150–199</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> Normal penuh 200</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-orange-400 inline-block" /> Extend/lembur (maks 100)</span>
+      <div className="flex items-center gap-4 text-[11px] text-white/30 flex-wrap">
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500/60 inline-block" /> Normal 1–149</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400/60 inline-block" /> Mendekati penuh 150–199</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500/60 inline-block" /> Normal penuh 200</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-400/60 inline-block" /> Extend/lembur (maks 100)</span>
         <div className="ml-auto">
           <button
             onClick={() => { setRefreshing(true); loadData(true); }}
             disabled={refreshing}
-            className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 font-medium"
+            className="flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 font-medium text-[12px]"
           >
             <svg className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
@@ -259,11 +240,11 @@ export default function KapasitasPage() {
       </div>
 
       {/* Leaderboard — admin only */}
-      {user?.role !== 'cs' && <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+      {user?.role !== 'cs' && <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+        <div className="px-6 py-4 border-b border-white/[0.04] flex items-center justify-between">
           <div>
-            <h2 className="font-bold text-slate-800">Leaderboard Kapasitas Harian</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Normal 200 pcs/hari · Extend (lembur) maks 100 pcs · Total maks 300 pcs/hari</p>
+            <h2 className="font-bold text-white/80 text-[14px]">Leaderboard Kapasitas Harian</h2>
+            <p className="text-[11px] text-white/25 mt-0.5">Normal 200 pcs/hari · Extend (lembur) maks 100 pcs · Total maks 300 pcs/hari</p>
           </div>
           {!loading && (
             <div className="flex items-center gap-3">
@@ -271,7 +252,7 @@ export default function KapasitasPage() {
               <div className="relative">
                 <button
                   onClick={() => setExportOpen(o => !o)}
-                  className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-sm"
+                  className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -282,22 +263,22 @@ export default function KapasitasPage() {
                   </svg>
                 </button>
                 {exportOpen && (
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-20 py-1 min-w-[168px]">
+                  <div className="absolute right-0 top-full mt-1.5 bg-[#141628] border border-white/[0.08] rounded-xl shadow-2xl shadow-black/40 z-20 py-1 min-w-[180px]">
                     <button
                       onClick={() => { generateCapacityPDF(allocations, 'weekly', viewYear, viewMonth); setExportOpen(false); }}
-                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                      className="w-full text-left px-4 py-2.5 text-[13px] text-white/60 hover:text-white hover:bg-white/[0.04] flex items-center gap-2 transition-colors"
                     >
-                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                      <svg className="w-4 h-4 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                       </svg>
                       Laporan 2 Mingguan
                     </button>
                     <button
                       onClick={() => { generateCapacityPDF(allocations, 'monthly', viewYear, viewMonth); setExportOpen(false); }}
-                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                      className="w-full text-left px-4 py-2.5 text-[13px] text-white/60 hover:text-white hover:bg-white/[0.04] flex items-center gap-2 transition-colors"
                     >
-                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                      <svg className="w-4 h-4 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                       </svg>
                       Laporan Bulanan
                     </button>
@@ -310,18 +291,18 @@ export default function KapasitasPage() {
                 onClick={() => setViewDayOffset(o => o - 1)}
                 disabled={!canGoPrev}
                 title="Hari sebelumnya"
-                className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/[0.06] hover:bg-white/[0.04] text-white/30 hover:text-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
               >
                 ↑
               </button>
-              <span className="text-[10px] text-slate-400 font-medium tabular-nums leading-none">
+              <span className="text-[10px] text-white/25 font-medium tabular-nums leading-none">
                 {viewDayOffset === 0 ? 'hari ini' : viewDayOffset > 0 ? `+${viewDayOffset}` : `${viewDayOffset}`}
               </span>
               <button
                 onClick={() => setViewDayOffset(o => o + 1)}
                 disabled={!canGoNext}
                 title="Hari berikutnya"
-                className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/[0.06] hover:bg-white/[0.04] text-white/30 hover:text-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
               >
                 ↓
               </button>
@@ -333,15 +314,15 @@ export default function KapasitasPage() {
         {loading ? (
           <div className="p-6 space-y-3">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" style={{ opacity: 1 - i * 0.08 }} />
+              <div key={i} className="h-14 bg-white/[0.03] rounded-xl animate-pulse border border-white/[0.03]" style={{ opacity: 1 - i * 0.08 }} />
             ))}
           </div>
         ) : error ? (
-          <div className="p-8 text-center text-slate-500">{error}</div>
+          <div className="p-8 text-center text-white/30">{error}</div>
         ) : !currentDay ? (
           <div className="p-12 text-center">
-            <div className="text-4xl mb-3">📭</div>
-            <p className="text-slate-500 text-sm">Tidak ada order aktif dalam antrian produksi</p>
+            <div className="text-4xl mb-3 opacity-50">📭</div>
+            <p className="text-white/25 text-[13px]">Tidak ada order aktif dalam antrian produksi</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-50">
@@ -384,110 +365,89 @@ export default function KapasitasPage() {
 }
 
 function getDayColor(day: DayAllocation): { border: string } {
-  if (!day || day.normalQty === 0) return { border: 'border-l-slate-200' };
-  if (day.normalQty >= 200 && day.extendQty > 0) return { border: 'border-l-orange-400' };
+  if (!day || day.normalQty === 0) return { border: 'border-l-white/[0.06]' };
+  if (day.normalQty >= 200 && day.extendQty > 0) return { border: 'border-l-orange-500' };
   if (day.normalQty >= 200) return { border: 'border-l-red-500' };
-  if (day.normalQty >= 150) return { border: 'border-l-amber-400' };
-  if (day.normalQty >= 100) return { border: 'border-l-emerald-400' };
-  if (day.normalQty >= 50) return { border: 'border-l-emerald-300' };
-  return { border: 'border-l-emerald-200' };
+  if (day.normalQty >= 150) return { border: 'border-l-amber-500' };
+  if (day.normalQty >= 100) return { border: 'border-l-emerald-500' };
+  if (day.normalQty >= 50) return { border: 'border-l-emerald-500/60' };
+  return { border: 'border-l-emerald-500/30' };
 }
 
 function DayRow({ day }: { day: DayAllocation }) {
   const { border } = getDayColor(day);
 
   const normalBarColor =
-    day.normalQty === 0 ? 'bg-slate-200' :
+    day.normalQty === 0 ? 'bg-white/[0.06]' :
     day.normalQty < 150 ? 'bg-emerald-500' :
     day.normalQty < 200 ? 'bg-amber-500' : 'bg-red-500';
 
   return (
-    <div className={`pl-5 pr-6 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors border-l-4 ${border} ${day.isToday ? 'bg-indigo-50/60' : ''}`}>
-      {/* Date */}
+    <div className={`pl-5 pr-6 py-4 flex items-center gap-4 hover:bg-white/[0.02] transition-colors border-l-4 ${border} ${day.isToday ? 'bg-indigo-500/[0.04]' : ''}`}>
       <div className="w-32 shrink-0">
-        <div className={`text-sm font-semibold ${day.isToday ? 'text-indigo-700' : 'text-slate-700'}`}>
+        <div className={`text-[13px] font-semibold ${day.isToday ? 'text-indigo-400' : 'text-white/60'}`}>
           {day.dateDisplay}
-          {day.isToday && <span className="ml-1 text-xs bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-bold">Hari ini</span>}
+          {day.isToday && <span className="ml-1 text-[10px] bg-indigo-500/15 text-indigo-400 px-1.5 py-0.5 rounded-full font-bold border border-indigo-500/20">Hari ini</span>}
         </div>
       </div>
 
-      {/* Dual bars */}
       <div className="flex-1 min-w-0">
         <div className="flex gap-3 items-end">
-          {/* Normal bar */}
           <div className="flex-[2] min-w-0">
             <div className="flex items-center gap-1 mb-1">
-              <span className="text-xs text-slate-400 font-medium">Normal</span>
-              {day.isNearFull && (
-                <span title="Mendekati kapasitas penuh" className="text-xs leading-none">⚠️</span>
-              )}
-              <span className={`ml-auto text-xs font-bold tabular-nums ${day.isFull ? 'text-red-600' : day.isNearFull ? 'text-amber-600' : 'text-slate-600'}`}>
+              <span className="text-[11px] text-white/25 font-medium">Normal</span>
+              <span className={`ml-auto text-[11px] font-bold tabular-nums ${day.isFull ? 'text-red-400' : day.isNearFull ? 'text-amber-400' : 'text-white/40'}`}>
                 {day.normalQty}/{NORMAL_CAP}
               </span>
             </div>
-            <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${normalBarColor}`}
-                style={{ width: `${day.normalPct}%` }}
-              />
+            <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+              <div className={`h-full rounded-full transition-all duration-500 ${normalBarColor}`} style={{ width: `${day.normalPct}%` }} />
             </div>
           </div>
 
-          {/* Extend bar */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1 mb-1">
-              <span className="text-xs text-slate-400 font-medium">Extend</span>
-              <span className={`ml-auto text-xs font-bold tabular-nums ${day.isExtendFull ? 'text-red-600' : day.extendQty > 0 ? 'text-orange-600' : 'text-slate-400'}`}>
+              <span className="text-[11px] text-white/25 font-medium">Extend</span>
+              <span className={`ml-auto text-[11px] font-bold tabular-nums ${day.isExtendFull ? 'text-red-400' : day.extendQty > 0 ? 'text-orange-400' : 'text-white/20'}`}>
                 {day.extendQty}/{EXTEND_CAP}
               </span>
             </div>
-            <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${day.extendQty > 0 ? (day.isExtendFull ? 'bg-red-400' : 'bg-orange-400') : ''}`}
-                style={{ width: `${day.extendPct}%` }}
-              />
+            <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+              <div className={`h-full rounded-full transition-all duration-500 ${day.extendQty > 0 ? (day.isExtendFull ? 'bg-red-400' : 'bg-orange-400') : ''}`} style={{ width: `${day.extendPct}%` }} />
             </div>
           </div>
 
-          {/* Over Extend bar */}
           {day.overExtendQty > 0 && (
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1 mb-1">
-                <span className="text-xs text-purple-500 font-medium">Over</span>
-                <span className="ml-auto text-xs font-bold tabular-nums text-purple-700">
-                  +{day.overExtendQty}
-                </span>
+                <span className="text-[11px] text-violet-400/60 font-medium">Over</span>
+                <span className="ml-auto text-[11px] font-bold tabular-nums text-violet-400">+{day.overExtendQty}</span>
               </div>
-              <div className="h-3 bg-purple-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500 bg-purple-500"
-                  style={{ width: `${day.overExtendPct}%` }}
-                />
+              <div className="h-2 bg-violet-500/10 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-500 bg-violet-500" style={{ width: `${day.overExtendPct}%` }} />
               </div>
             </div>
           )}
         </div>
 
-        {/* Customer tags */}
         {day.customers.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1.5">
             {day.customers.map(c => (
-              <span key={c} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{c}</span>
+              <span key={c} className="text-[11px] bg-white/[0.04] text-white/30 px-2 py-0.5 rounded-full border border-white/[0.04]">{c}</span>
             ))}
           </div>
         )}
       </div>
 
-      {/* Status badge */}
       <div className="w-20 text-right shrink-0">
         {day.overExtendQty > 0 ? (
-          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">OVER</span>
+          <span className="text-[11px] bg-violet-500/15 text-violet-400 px-2 py-1 rounded-lg font-semibold border border-violet-500/20">OVER</span>
         ) : day.isExtendFull ? (
-          <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full font-semibold">FULL</span>
+          <span className="text-[11px] bg-red-500/15 text-red-400 px-2 py-1 rounded-lg font-semibold border border-red-500/20">FULL</span>
         ) : day.isFull ? (
-          <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-semibold">+ Lembur</span>
+          <span className="text-[11px] bg-orange-500/15 text-orange-400 px-2 py-1 rounded-lg font-semibold border border-orange-500/20">+ Lembur</span>
         ) : day.normalQty === 0 ? null : (
-          <span className="text-xs text-slate-400">{NORMAL_CAP - day.normalQty} sisa</span>
+          <span className="text-[11px] text-white/20">{NORMAL_CAP - day.normalQty} sisa</span>
         )}
       </div>
     </div>
@@ -517,30 +477,24 @@ function MonthlyCapacityView({
   const [hovered, setHovered] = useState<string | null>(null);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-      {/* Header */}
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="font-bold text-slate-800">Visualisasi Kapasitas</h3>
+        <h3 className="font-bold text-white/80 text-[14px]">Visualisasi Kapasitas</h3>
         <div className="flex items-center gap-3">
-          <button
-            onClick={onPrev}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-800 transition-colors"
-          >
+          <button onClick={onPrev}
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/[0.06] hover:bg-white/[0.04] text-white/30 hover:text-white/60 transition-colors">
             ‹
           </button>
-          <span className="text-sm font-semibold text-slate-700 w-36 text-center">
+          <span className="text-[13px] font-semibold text-white/60 w-36 text-center">
             {MONTHS_FULL[viewMonth]} {viewYear}
           </span>
-          <button
-            onClick={onNext}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-800 transition-colors"
-          >
+          <button onClick={onNext}
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/[0.06] hover:bg-white/[0.04] text-white/30 hover:text-white/60 transition-colors">
             ›
           </button>
         </div>
       </div>
 
-      {/* Day boxes */}
       <div className="flex flex-wrap gap-2">
         {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
           const key = makeDateKey(day, viewMonth, viewYear);
@@ -549,20 +503,20 @@ function MonthlyCapacityView({
           const isSunday = new Date(viewYear, viewMonth, day).getDay() === 0;
 
           const bg = isSunday
-            ? 'bg-slate-50 text-slate-300'
+            ? 'bg-white/[0.02] text-white/10'
             : !alloc || alloc.normalQty === 0
-            ? 'bg-slate-100 text-slate-400'
+            ? 'bg-white/[0.04] text-white/25'
             : alloc.normalQty < 50
-            ? 'bg-emerald-100 text-emerald-700'
+            ? 'bg-emerald-500/10 text-emerald-400'
             : alloc.normalQty < 100
-            ? 'bg-emerald-200 text-emerald-800'
+            ? 'bg-emerald-500/15 text-emerald-400'
             : alloc.normalQty < 150
-            ? 'bg-emerald-300 text-emerald-900'
+            ? 'bg-emerald-500/25 text-emerald-300'
             : alloc.normalQty < 200
-            ? 'bg-amber-300 text-amber-900'
+            ? 'bg-amber-500/20 text-amber-400'
             : alloc.extendQty > 0
-            ? 'bg-orange-400 text-white'
-            : 'bg-red-500 text-white';
+            ? 'bg-orange-500/25 text-orange-300'
+            : 'bg-red-500/25 text-red-400';
 
           const tooltip = isSunday
             ? `${day} ${MONTHS_FULL[viewMonth]} ${viewYear}\nLibur (Minggu)`
@@ -577,14 +531,14 @@ function MonthlyCapacityView({
               onMouseEnter={() => !isSunday && setHovered(key)}
               onMouseLeave={() => setHovered(null)}
               className={`
-                relative w-12 h-12 rounded-xl flex flex-col items-center justify-center select-none
-                ${isSunday ? 'cursor-default opacity-50' : 'cursor-default transition-transform hover:scale-110 hover:shadow-md'}
+                relative w-12 h-12 rounded-xl flex flex-col items-center justify-center select-none border
+                ${isSunday ? 'cursor-default opacity-40 border-transparent' : 'cursor-default transition-transform hover:scale-110 border-white/[0.04]'}
                 ${bg}
-                ${isToday ? 'ring-2 ring-indigo-500 ring-offset-1' : ''}
+                ${isToday ? 'ring-2 ring-indigo-500 ring-offset-1 ring-offset-[#0a0b12]' : ''}
                 ${hovered === key ? 'z-10' : ''}
               `}
             >
-              <span className="text-sm font-bold leading-none">{day}</span>
+              <span className="text-sm font-bold leading-none text-white">{day}</span>
               {alloc && alloc.normalQty > 0 && (
                 <span className="text-[9px] leading-none mt-0.5 opacity-80 font-medium">
                   {alloc.normalQty}
@@ -596,14 +550,13 @@ function MonthlyCapacityView({
         })}
       </div>
 
-      {/* Footer legend */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-4 text-xs text-slate-400">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-slate-100 inline-block border border-slate-200" /> Kosong</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-200 inline-block" /> 1–149</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-300 inline-block" /> 150–199</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500 inline-block" /> Normal penuh 200</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-400 inline-block" /> + Extend/lembur</span>
-        <span className="ml-auto">Hover kotak untuk lihat detail · <span className="inline-block w-2.5 h-2.5 rounded ring-2 ring-indigo-500 bg-slate-100 align-middle" /> = hari ini</span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-4 text-[11px] text-white/25">
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-white/[0.04] inline-block border border-white/[0.06]" /> Kosong</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-emerald-500/15 inline-block" /> 1–149</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-amber-500/20 inline-block" /> 150–199</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-red-500/25 inline-block" /> Normal penuh 200</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-orange-500/25 inline-block" /> + Extend/lembur</span>
+        <span className="ml-auto">Hover kotak untuk lihat detail · <span className="inline-block w-2 h-2 rounded ring-2 ring-indigo-500 bg-white/[0.04] align-middle" /> = hari ini</span>
       </div>
     </div>
   );
@@ -633,23 +586,17 @@ function CapacityChart({
   const extendLineY = BAR_H - ((NORMAL_CAP + EXTEND_CAP) / maxQty) * BAR_H;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="font-bold text-slate-800">Chart Kapasitas Harian</h3>
-          <p className="text-xs text-slate-400 mt-0.5">Klik bar untuk lihat detail hari tersebut</p>
+          <h3 className="font-bold text-white/80 text-[14px]">Chart Kapasitas Harian</h3>
+          <p className="text-[11px] text-white/25 mt-0.5">Klik bar untuk lihat detail hari tersebut</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={onPrev}
-            disabled={!canPrev}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >‹</button>
-          <button
-            onClick={onNext}
-            disabled={!canNext}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >›</button>
+          <button onClick={onPrev} disabled={!canPrev}
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/[0.06] hover:bg-white/[0.04] text-white/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">‹</button>
+          <button onClick={onNext} disabled={!canNext}
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/[0.06] hover:bg-white/[0.04] text-white/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">›</button>
         </div>
       </div>
 
@@ -664,8 +611,8 @@ function CapacityChart({
             const overPctOfBar = day.qty > 0 ? (day.overExtendQty / day.qty) * 100 : 0;
             const normalBarColor =
               day.normalQty === 0 ? '' :
-              day.normalQty < 150 ? 'bg-emerald-400' :
-              day.normalQty < 200 ? 'bg-amber-400' : 'bg-red-500';
+              day.normalQty < 150 ? 'bg-emerald-500' :
+              day.normalQty < 200 ? 'bg-amber-500' : 'bg-red-500';
             const parts = day.dateDisplay.split(', ');
             const dayName = parts[0] ?? '';
             const dayNum = (parts[1] ?? '').split(' ')[0] ?? '';
@@ -677,19 +624,12 @@ function CapacityChart({
                 <button
                   onClick={() => onDayClick(day.dateKey)}
                   title={`${day.dateDisplay}: ${day.qty} pcs`}
-                  className={`relative w-full rounded-t overflow-hidden bg-slate-100 hover:opacity-80 transition-opacity ${isCurrent ? 'ring-2 ring-indigo-500 ring-offset-1' : ''} ${day.isToday && !isCurrent ? 'ring-2 ring-indigo-200 ring-offset-1' : ''}`}
+                  className={`relative w-full rounded-t overflow-hidden bg-white/[0.04] hover:opacity-80 transition-opacity ${isCurrent ? 'ring-2 ring-indigo-500 ring-offset-1 ring-offset-[#0a0b12]' : ''} ${day.isToday && !isCurrent ? 'ring-2 ring-indigo-500/30 ring-offset-1 ring-offset-[#0a0b12]' : ''}`}
                   style={{ height: `${BAR_H}px` }}
                 >
                   {/* Reference line Normal cap */}
-                  <div
-                    className="absolute left-0 right-0 border-t border-dashed border-slate-300 pointer-events-none z-10"
-                    style={{ top: `${normalLineY}px` }}
-                  />
-                  {/* Reference line Extend cap */}
-                  <div
-                    className="absolute left-0 right-0 border-t border-dashed border-orange-200 pointer-events-none z-10"
-                    style={{ top: `${extendLineY}px` }}
-                  />
+                  <div className="absolute left-0 right-0 border-t border-dashed border-white/10 pointer-events-none z-10" style={{ top: `${normalLineY}px` }} />
+                  <div className="absolute left-0 right-0 border-t border-dashed border-orange-500/20 pointer-events-none z-10" style={{ top: `${extendLineY}px` }} />
                   {/* Filled bar from bottom */}
                   {day.qty > 0 && (
                     <div
@@ -719,50 +659,52 @@ function CapacityChart({
                 </button>
 
                 {/* Labels */}
-                <span className={`text-[9px] leading-none font-semibold ${isCurrent ? 'text-indigo-600' : day.isToday ? 'text-indigo-400' : 'text-slate-400'}`}>
+                <span className={`text-[9px] leading-none font-semibold ${isCurrent ? 'text-indigo-400' : day.isToday ? 'text-indigo-400/50' : 'text-white/20'}`}>
                   {dayName}
                 </span>
-                <span className={`text-[9px] leading-none tabular-nums ${isCurrent ? 'text-indigo-600 font-bold' : 'text-slate-400'}`}>
+                <span className={`text-[9px] leading-none tabular-nums ${isCurrent ? 'text-indigo-400 font-bold' : 'text-white/20'}`}>
                   {dayNum}
                 </span>
-                <span className="text-[8px] leading-none text-slate-300">{monthName}</span>
+                <span className="text-[8px] leading-none text-white/10">{monthName}</span>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-[10px] text-slate-400">
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-400 inline-block" /> Normal</span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-[10px] text-white/25">
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Normal</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-orange-400 inline-block" /> Extend</span>
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-purple-500 inline-block" /> Over</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-1 border-t-2 border-dashed border-slate-300" /> Normal cap (200)</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-1 border-t-2 border-dashed border-orange-200" /> Extend cap (300)</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm ring-2 ring-indigo-500 bg-slate-100" /> Dipilih</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-violet-500 inline-block" /> Over</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-1 border-t-2 border-dashed border-white/10" /> Normal cap (200)</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-1 border-t-2 border-dashed border-orange-500/20" /> Extend cap (300)</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm ring-2 ring-indigo-500 bg-white/[0.04]" /> Dipilih</span>
       </div>
     </div>
   );
 }
 
-function SummaryCard({ label, value, sub, color, icon }: {
-  label: string; value: number; sub: string; color: string; icon: string;
+function SummaryCard({ label, value, sub, color }: {
+  label: string; value: number; sub: string; color: string;
 }) {
-  const colors: Record<string, string> = {
-    indigo: 'bg-indigo-50 border-indigo-100',
-    blue: 'bg-blue-50 border-blue-100',
-    green: 'bg-emerald-50 border-emerald-100',
-    amber: 'bg-amber-50 border-amber-100',
-    orange: 'bg-orange-50 border-orange-100',
-    red: 'bg-red-50 border-red-100',
-    purple: 'bg-purple-50 border-purple-100',
+  const styles: Record<string, { bg: string; text: string; dot: string }> = {
+    indigo: { bg: 'from-indigo-500/15 to-indigo-500/5 border-indigo-500/10', text: 'text-indigo-400', dot: 'bg-indigo-400' },
+    blue: { bg: 'from-blue-500/15 to-blue-500/5 border-blue-500/10', text: 'text-blue-400', dot: 'bg-blue-400' },
+    green: { bg: 'from-emerald-500/15 to-emerald-500/5 border-emerald-500/10', text: 'text-emerald-400', dot: 'bg-emerald-400' },
+    amber: { bg: 'from-amber-500/15 to-amber-500/5 border-amber-500/10', text: 'text-amber-400', dot: 'bg-amber-400' },
+    orange: { bg: 'from-orange-500/15 to-orange-500/5 border-orange-500/10', text: 'text-orange-400', dot: 'bg-orange-400' },
+    red: { bg: 'from-red-500/15 to-red-500/5 border-red-500/10', text: 'text-red-400', dot: 'bg-red-400' },
+    purple: { bg: 'from-violet-500/15 to-violet-500/5 border-violet-500/10', text: 'text-violet-400', dot: 'bg-violet-400' },
   };
+  const s = styles[color] || styles.indigo;
   return (
-    <div className={`rounded-2xl border p-5 ${colors[color] || colors.indigo}`}>
-      <div className="text-2xl mb-2">{icon}</div>
-      <div className="text-3xl font-bold text-slate-800 mb-0.5">{value.toLocaleString()}</div>
-      <div className="text-sm font-medium text-slate-700">{label}</div>
-      <div className="text-xs text-slate-400 mt-0.5">{sub}</div>
+    <div className={`rounded-xl bg-gradient-to-br ${s.bg} border p-4 overflow-hidden`}>
+      <div className="flex items-center gap-2 mb-1">
+        <div className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+        <span className="text-[11px] font-medium text-white/30 uppercase tracking-wider">{label}</span>
+      </div>
+      <div className={`text-2xl font-bold ${s.text} mb-0.5 tabular-nums`}>{value.toLocaleString()}</div>
+      <div className="text-[11px] text-white/20">{sub}</div>
     </div>
   );
 }
