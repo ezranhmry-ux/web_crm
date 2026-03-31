@@ -242,52 +242,50 @@ export default function InvoicePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f2efe8] px-4 py-8 text-slate-900 print:bg-white print:p-0">
-      {/* Export button — hidden on print */}
-      <div className="mx-auto max-w-6xl mb-4 flex justify-end print:hidden">
+    <div className="min-h-screen min-h-[100dvh] bg-[#f2efe8] px-3 sm:px-4 py-4 sm:py-8 text-slate-900 print:bg-white print:p-0">
+      {/* Top bar — hidden on print */}
+      <div className="mx-auto max-w-6xl mb-3 sm:mb-4 flex items-center justify-between print:hidden">
+        <Link href={`/tracking/${encodeURIComponent(order.noWorkOrder)}`}
+          className="text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+          &larr; Tracking
+        </Link>
         <button
           onClick={handleExportPDF}
-          className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-1 4H7a1 1 0 01-1-1v-4a1 1 0 011-1h10a1 1 0 011 1v4a1 1 0 01-1 1z"/></svg>
+          <svg className="w-4 h-4 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-1 4H7a1 1 0 01-1-1v-4a1 1 0 011-1h10a1 1 0 011 1v4a1 1 0 01-1 1z"/></svg>
           Export PDF
         </button>
       </div>
 
-      <div id="invoice-content" className="mx-auto max-w-6xl border border-slate-400 bg-white p-6 shadow-sm md:p-10 print:border-0 print:shadow-none print:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-slate-900 pb-6">
+      <div id="invoice-content" className="mx-auto max-w-6xl border border-slate-400 bg-white p-4 sm:p-6 md:p-10 shadow-sm print:border-0 print:shadow-none print:p-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b-2 border-slate-900 pb-4 sm:pb-6">
           <div>
-            <p className="text-5xl font-black uppercase leading-none tracking-tight">AYRES</p>
-            <p className="mt-1 text-2xl font-black uppercase leading-none tracking-tight">Order Invoice</p>
+            <p className="text-3xl sm:text-5xl font-black uppercase leading-none tracking-tight">AYRES</p>
+            <p className="mt-1 text-lg sm:text-2xl font-black uppercase leading-none tracking-tight">Order Invoice</p>
           </div>
-
-          <div className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-x-4 sm:gap-x-8 gap-y-1.5 sm:gap-y-2 text-xs sm:text-sm">
             <Meta label="Order #" value={String(order.no)} />
-            <Meta label="Shipping" value="Manual Confirmation" />
+            <Meta label="Shipping" value="Manual" />
             <Meta label="Date" value={formatDate(order.dpProduksi)} />
             <Meta label="Invoice" value={order.noWorkOrder} />
-            <Meta label="Submit" value="Customer Service" />
+            <Meta label="Submit" value="CS" />
             <Meta label="Deadline" value={formatDate(order.dlCust)} />
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-start justify-between gap-6">
-          <div className="text-sm">
+        {/* Ship to */}
+        <div className="mt-4 sm:mt-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="text-xs sm:text-sm">
             <p className="font-bold uppercase">Ship To:</p>
-            <p className="mt-2">{order.customer}</p>
+            <p className="mt-1 sm:mt-2">{order.customer}</p>
             <p>{order.customerPhone || '-'}</p>
-            <p>Tracking produksi berbasis No. WO</p>
           </div>
-
-          <Link
-            href={`/tracking/${encodeURIComponent(order.noWorkOrder)}`}
-            className="border border-slate-900 px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-900"
-          >
-            Tracking
-          </Link>
         </div>
 
-        <div className="mt-8 border-y-2 border-slate-900 py-3">
+        {/* Table — desktop: 4 cols, mobile: stacked card */}
+        <div className="mt-6 sm:mt-8 border-y-2 border-slate-900 py-3 hidden sm:block">
           <div className="grid grid-cols-[90px_minmax(0,1fr)_140px_140px] gap-4 text-sm font-black uppercase">
             <div>Qty</div>
             <div>Description</div>
@@ -295,8 +293,7 @@ export default function InvoicePage() {
             <div className="text-right">Amount</div>
           </div>
         </div>
-
-        <div className="border-b border-slate-300 px-0 py-5">
+        <div className="border-b border-slate-300 py-4 sm:py-5 hidden sm:block">
           <div className="grid grid-cols-[90px_minmax(0,1fr)_140px_140px] gap-4 text-sm">
             <div className="font-semibold">{order.qty}</div>
             <div>
@@ -307,33 +304,57 @@ export default function InvoicePage() {
             <div className="text-right">{formatCurrency(unitPrice)}</div>
             <div className="text-right font-semibold">{formatCurrency(order.sallaryProduct)}</div>
           </div>
+        </div>
 
-          <div className="mt-6 border-t border-slate-200 pt-5">
-            <div className="flex flex-wrap gap-3">
-              {progressItems.map((item) => (
-                <div key={item.label} className="min-w-24 text-center">
-                  <div className={`inline-flex min-h-10 min-w-10 items-center justify-center border px-3 py-2 text-xs font-bold uppercase ${item.checked ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-400 bg-white text-slate-700'}`}>
-                    {item.label}
-                  </div>
-                  <p className="mt-1 text-xs font-semibold">{item.checked ? '1/1' : '0/1'}</p>
-                </div>
-              ))}
+        {/* Mobile item card */}
+        <div className="mt-5 border-y-2 border-slate-900 py-4 sm:hidden">
+          <p className="text-xs font-black uppercase text-slate-500 mb-2">Item</p>
+          <p className="font-bold text-sm">{buildDescription(order)}</p>
+          <p className="text-xs text-slate-600 mt-1">{order.keterangan || '-'}</p>
+          <p className="text-xs text-slate-600">Bahan: {order.bahan || '-'}</p>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p className="text-[10px] text-slate-400 uppercase">Qty</p>
+              <p className="text-sm font-bold">{order.qty}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-400 uppercase">Harga</p>
+              <p className="text-sm font-semibold">{formatCurrency(unitPrice)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-400 uppercase">Jumlah</p>
+              <p className="text-sm font-bold">{formatCurrency(order.sallaryProduct)}</p>
             </div>
           </div>
         </div>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-[1fr_280px]">
-          <div className="min-h-32 border border-slate-300 p-4 text-sm text-slate-600">
+        {/* Progress stages */}
+        <div className="mt-5 sm:mt-6 border-t border-slate-200 pt-4 sm:pt-5">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            {progressItems.map((item) => (
+              <div key={item.label} className="text-center">
+                <div className={`inline-flex min-h-8 sm:min-h-10 items-center justify-center border px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold uppercase ${item.checked ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-400 bg-white text-slate-700'}`}>
+                  {item.label}
+                </div>
+                <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs font-semibold">{item.checked ? '1/1' : '0/1'}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom: Notes + Totals */}
+        <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-6 md:grid-cols-[1fr_280px]">
+          <div className="border border-slate-300 p-3 sm:p-4 text-xs sm:text-sm text-slate-600">
             <p className="font-bold uppercase text-slate-900">Catatan</p>
             <p className="mt-2">DP Produksi: {formatDate(order.dpProduksi)}</p>
             <p>Tgl Selesai: {formatDate(order.tglSelesai)}</p>
             <p>Status Kirim: {order.tglKirim ? formatDate(order.tglKirim) : 'Belum dikirim'}</p>
           </div>
 
-          <div className="space-y-3 border-t-2 border-slate-900 pt-4 text-sm">
+          <div className="space-y-2 sm:space-y-3 border-t-2 border-slate-900 pt-3 sm:pt-4 text-sm">
             <TotalRow label="Total" value={formatCurrency(order.sallaryProduct)} />
             <TotalRow label="Shipping" value={formatCurrency(order.sallaryShipping)} />
-            <div className="flex items-center justify-between border-t-2 border-slate-900 pt-3 text-lg font-black uppercase">
+            <div className="flex items-center justify-between border-t-2 border-slate-900 pt-3 text-base sm:text-lg font-black uppercase">
               <span>Grand Total</span>
               <span>{formatCurrency(grandTotal)}</span>
             </div>
@@ -346,10 +367,10 @@ export default function InvoicePage() {
 
 function Meta({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start gap-2 whitespace-nowrap">
-      <span className="font-black uppercase">{label}</span>
-      <span>:</span>
-      <span className="font-semibold">{value}</span>
+    <div className="flex items-start gap-1.5 sm:gap-2">
+      <span className="font-black uppercase shrink-0">{label}</span>
+      <span className="shrink-0">:</span>
+      <span className="font-semibold truncate">{value}</span>
     </div>
   );
 }
