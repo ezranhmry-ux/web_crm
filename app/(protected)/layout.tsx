@@ -23,37 +23,40 @@ const NAV: Record<Role, { href: string; label: string }[]> = {
 };
 
 function SlidingNav({ items, pathname }: { items: { href: string; label: string }[]; pathname: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [bar, setBar] = useState({ x: 0, w: 0, ready: false });
+  const linksRef = useRef<HTMLDivElement>(null);
+  const [pill, setPill] = useState({ x: 0, w: 0, ready: false });
 
   useEffect(() => {
-    if (!ref.current) return;
+    if (!linksRef.current) return;
+    const links = linksRef.current.querySelectorAll<HTMLElement>('[data-nav]');
     const idx = items.findIndex(i => i.href === pathname);
-    const el = ref.current.children[idx] as HTMLElement | undefined;
+    const el = links[idx];
     if (!el) return;
-    setBar({ x: el.offsetLeft, w: el.offsetWidth, ready: true });
+    setPill({ x: el.offsetLeft, w: el.offsetWidth, ready: true });
   }, [pathname, items]);
 
   return (
-    <div ref={ref} className="absolute left-1/2 -translate-x-1/2 flex items-center h-full gap-1">
-      {/* Pill indicator */}
-      {bar.ready && (
-        <div
-          className="absolute top-1/2 -translate-y-1/2 h-8 rounded-full bg-[#18181b] transition-all duration-300 ease-[cubic-bezier(.4,0,.2,1)]"
-          style={{ left: bar.x - 2, width: bar.w + 4 }}
-        />
-      )}
-      {items.map(item => {
-        const active = pathname === item.href;
-        return (
-          <Link key={item.href} href={item.href}
-            className={`relative z-10 h-8 flex items-center px-4 rounded-full text-[13px] font-medium transition-colors duration-200
-              ${active ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-          >
-            {item.label}
-          </Link>
-        );
-      })}
+    <div className="absolute left-1/2 -translate-x-1/2 flex items-center h-full">
+      <div ref={linksRef} className="relative flex items-center gap-0.5">
+        {/* Sliding pill */}
+        {pill.ready && (
+          <div
+            className="absolute top-1/2 -translate-y-1/2 h-8 rounded-full bg-zinc-800 border border-zinc-700/50 transition-all duration-300 ease-[cubic-bezier(.4,0,.2,1)]"
+            style={{ left: pill.x, width: pill.w }}
+          />
+        )}
+        {items.map(item => {
+          const active = pathname === item.href;
+          return (
+            <Link key={item.href} href={item.href} data-nav
+              className={`relative z-10 h-8 flex items-center px-4 rounded-full text-[13px] font-medium transition-colors duration-200
+                ${active ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }

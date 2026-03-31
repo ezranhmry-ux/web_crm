@@ -5,8 +5,21 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { apiGetDashboard, apiGetOrders, apiGetDashboardForce, apiGetOrdersForce } from '@/lib/api';
 import { DashboardStats, Order } from '@/lib/types';
-import { STAGES, RISK_STYLES, RISK_LABELS, STATUS_STYLES, STATUS_LABELS } from '@/lib/constants';
+import { STAGES, RISK_LABELS, STATUS_LABELS } from '@/lib/constants';
 import { formatDate } from '@/lib/utils';
+
+const RISK_D: Record<string, string> = {
+  SAFE: 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20',
+  NORMAL: 'text-zinc-400 bg-zinc-800 border border-zinc-700',
+  NEAR: 'text-amber-400 bg-amber-500/10 border border-amber-500/20',
+  HIGH: 'text-red-400 bg-red-500/10 border border-red-500/20',
+  OVERDUE: 'text-red-400 bg-red-500/15 border border-red-500/25',
+};
+const STATUS_D: Record<string, string> = {
+  OPEN: 'text-blue-400 bg-blue-500/10 border border-blue-500/20',
+  IN_PROGRESS: 'text-amber-400 bg-amber-500/10 border border-amber-500/20',
+  DONE: 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20',
+};
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -37,9 +50,7 @@ export default function DashboardPage() {
       if (ordersRes.success && ordersRes.data) setOrders(ordersRes.data);
       if (!statsRes.success) setError(statsRes.error || 'Gagal memuat data');
       else setError('');
-    } catch {
-      setError('Gagal terhubung. Cek konfigurasi APPS_SCRIPT_URL.');
-    }
+    } catch { setError('Gagal terhubung. Cek konfigurasi APPS_SCRIPT_URL.'); }
     setLoading(false);
   }
 
@@ -53,13 +64,8 @@ export default function DashboardPage() {
   };
   const dateMs = (s: string) => parseDate(s)?.getTime() ?? Infinity;
   const monthKey = (s: string) => { const d = parseDate(s); return d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` : '9999-99'; };
-  const monthLabel = (key: string) => {
-    const [y, m] = key.split('-');
-    const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    return `${BULAN[+m - 1]} ${y}`;
-  };
+  const monthLabel = (key: string) => { const [y, m] = key.split('-'); const B = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']; return `${B[+m - 1]} ${y}`; };
 
-  // Group by month → date → orders
   const monthsMap = new Map<string, Map<string, Order[]>>();
   for (const o of orders) {
     const dk = o.tglSelesai || o.dlCust || '—';
@@ -83,117 +89,70 @@ export default function DashboardPage() {
   if (error) return <ErrorState message={error} onRetry={fetchData} />;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Stats row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Total Order Aktif"
-          value={stats ? stats.totalOrders - stats.doneOrders : 0}
-          sub={`${stats?.doneOrders ?? 0} selesai`}
-          color="indigo"
-          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>}
-        />
-        <StatCard
-          label="Near Deadline"
-          value={stats?.nearDeadlineCount ?? 0}
-          sub="≤ 3 hari lagi"
-          color="amber"
-          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
-        />
-        <StatCard
-          label="Overdue"
-          value={stats?.overdueCount ?? 0}
-          sub="Sudah lewat deadline"
-          color="red"
-          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>}
-        />
-        <StatCard
-          label="Kapasitas Hari Ini"
-          value={stats?.dailyCapacityUsed ?? 0}
-          sub={`total hari ini`}
-          color="green"
-          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>}
-        />
+    <div className="space-y-5 max-w-7xl mx-auto">
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="Total Order Aktif" value={stats ? stats.totalOrders - stats.doneOrders : 0} sub={`${stats?.doneOrders ?? 0} selesai`} color="indigo" />
+        <StatCard label="Near Deadline" value={stats?.nearDeadlineCount ?? 0} sub="3 hari lagi" color="amber" />
+        <StatCard label="Overdue" value={stats?.overdueCount ?? 0} sub="Lewat deadline" color="red" />
+        <StatCard label="Kapasitas Hari Ini" value={stats?.dailyCapacityUsed ?? 0} sub="total hari ini" color="emerald" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Stage pipeline */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h2 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-            <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-            </svg>
-            Progress Pipeline Produksi
-          </h2>
-          <div className="space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Pipeline */}
+        <div className="lg:col-span-2 rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+          <h2 className="text-sm font-semibold text-zinc-200 mb-4">Progress Pipeline Produksi</h2>
+          <div className="space-y-2.5">
             {STAGES.map(stage => {
               const count = stats?.stageCounts?.[stage.key] ?? 0;
               const maxCount = Math.max(1, ...Object.values(stats?.stageCounts ?? {}));
               const pct = Math.round((count / maxCount) * 100);
               return (
                 <div key={stage.key} className="flex items-center gap-3">
-                  <span className="text-xs text-slate-500 w-32 shrink-0">{stage.label}</span>
-                  <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-                      style={{ width: `${pct}%` }}
-                    />
+                  <span className="text-xs text-zinc-500 w-28 shrink-0">{stage.label}</span>
+                  <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
                   </div>
-                  <span className="text-xs font-semibold text-slate-700 w-8 text-right">{count}</span>
+                  <span className="text-xs font-medium text-zinc-400 w-6 text-right tabular-nums">{count}</span>
                 </div>
               );
             })}
-            {stats?.stageCounts?.['OPEN'] != null && stats.stageCounts['OPEN'] > 0 && (
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-500 w-32 shrink-0">Belum mulai</span>
-                <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-slate-300 rounded-full" style={{ width: `${Math.round((stats.stageCounts['OPEN'] / Math.max(1, stats.totalOrders)) * 100)}%` }} />
-                </div>
-                <span className="text-xs font-semibold text-slate-700 w-8 text-right">{stats.stageCounts['OPEN']}</span>
-              </div>
+          </div>
+        </div>
+
+        {/* Warning */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-zinc-200">Warning Center</h2>
+            {warningOrders.length > 0 && (
+              <span className="text-[11px] bg-red-500/10 text-red-400 px-2 py-0.5 rounded-md font-medium border border-red-500/20">{warningOrders.length}</span>
             )}
           </div>
 
-        </div>
-
-        {/* Warning center */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h2 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-            <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-            </svg>
-            Warning Center
-            {warningOrders.length > 0 && (
-              <span className="ml-auto text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">
-                {warningOrders.length}
-              </span>
-            )}
-          </h2>
-
           {warningOrders.length === 0 ? (
             <div className="text-center py-8">
-              <svg className="w-10 h-10 text-green-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              <p className="text-sm text-slate-500">Semua order aman</p>
+              <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 grid place-items-center mx-auto mb-2">
+                <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <p className="text-sm text-zinc-500">Semua order aman</p>
             </div>
           ) : (
-            <div className="space-y-2 overflow-y-auto max-h-72">
+            <div className="space-y-1.5 overflow-y-auto max-h-72">
               {warningOrders.map(order => (
-                <div key={order.rowIndex} className="p-3 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors">
+                <div key={order.rowIndex} className="p-3 rounded-lg border border-zinc-800 hover:bg-zinc-800/50 transition-colors">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{order.customer}</p>
-                      <p className="text-xs text-slate-500">{order.qty} pcs · {order.paket1} {order.paket2}</p>
+                      <p className="text-sm font-medium text-zinc-200 truncate">{order.customer}</p>
+                      <p className="text-xs text-zinc-600">{order.qty} pcs · {order.paket1} {order.paket2}</p>
                     </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${RISK_STYLES[order.riskLevel || 'NORMAL']}`}>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-md font-medium shrink-0 ${RISK_D[order.riskLevel || 'NORMAL']}`}>
                       {RISK_LABELS[order.riskLevel || 'NORMAL']}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-zinc-600 mt-1">
                     DL: {formatDate(order.tglSelesai || order.dlCust)}
                     {order.daysLeft != null && (
-                      <span className={`ml-2 font-medium ${order.daysLeft < 0 ? 'text-red-600' : 'text-amber-600'}`}>
+                      <span className={`ml-2 font-medium ${order.daysLeft < 0 ? 'text-red-400' : 'text-amber-400'}`}>
                         {order.daysLeft < 0 ? `${Math.abs(order.daysLeft)} hari lewat` : `${order.daysLeft} hari lagi`}
                       </span>
                     )}
@@ -205,33 +164,25 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Recent orders — grouped by month → date */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-800">Order Terbaru</h2>
-          <Link href="/orders" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-            Lihat semua →
-          </Link>
+      {/* Recent orders */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
+        <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-zinc-200">Order Terbaru</h2>
+          <Link href="/orders" className="text-[13px] text-indigo-400 hover:text-indigo-300 font-medium transition-colors">Lihat semua</Link>
         </div>
 
         {sortedMonths.length === 0 ? (
-          <div className="px-6 py-8 text-center text-slate-400 text-sm">Belum ada data order</div>
+          <div className="px-5 py-8 text-center text-zinc-600 text-sm">Belum ada data order</div>
         ) : (
           <>
             {/* Month tabs */}
-            <div className="px-6 pt-3 pb-0 flex gap-2 overflow-x-auto border-b border-slate-100">
+            <div className="px-5 pt-3 flex gap-1 overflow-x-auto border-b border-zinc-800">
               {sortedMonths.map(mk => (
-                <button
-                  key={mk}
-                  onClick={() => { setSelectedMonth(mk); setOrderPage(1); }}
-                  className={`shrink-0 px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors
-                    ${mk === activeMonth
-                      ? 'border-indigo-500 text-indigo-600 bg-indigo-50/60'
-                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
-                >
+                <button key={mk} onClick={() => { setSelectedMonth(mk); setOrderPage(1); }}
+                  className={`shrink-0 px-3 py-2 text-[13px] font-medium border-b-2 transition-colors
+                    ${mk === activeMonth ? 'border-zinc-100 text-zinc-100' : 'border-transparent text-zinc-600 hover:text-zinc-400'}`}>
                   {monthLabel(mk)}
-                  <span className={`ml-1.5 text-xs rounded-full px-1.5 py-0.5 tabular-nums
-                    ${mk === activeMonth ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
+                  <span className={`ml-1.5 text-xs tabular-nums ${mk === activeMonth ? 'text-zinc-400' : 'text-zinc-700'}`}>
                     {Array.from(monthsMap.get(mk)!.values()).reduce((s, a) => s + a.length, 0)}
                   </span>
                 </button>
@@ -239,7 +190,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Date rows */}
-            <div className="divide-y divide-slate-50">
+            <div className="divide-y divide-zinc-800/50">
               {pagedDates.map(([dateKey, dateOrders]) => {
                 const totalQty = dateOrders.reduce((s, o) => s + o.qty, 0);
                 const RISK_RANK: Record<string, number> = { OVERDUE: 4, HIGH: 3, NEAR: 2, NORMAL: 1, SAFE: 0 };
@@ -247,35 +198,37 @@ export default function DashboardPage() {
                 const allDone = dateOrders.every(o => o.status === 'DONE');
                 const statusSummary = allDone ? 'Selesai' : `${dateOrders.filter(o => o.status !== 'DONE').length} aktif`;
                 return (
-                  <div key={dateKey} className="px-6 py-3.5 flex items-center gap-4 hover:bg-slate-50 transition-colors">
-                    <div className="w-28 shrink-0 text-sm font-semibold text-slate-700">{formatDate(dateKey)}</div>
+                  <div key={dateKey} className="px-5 py-3 flex items-center gap-4 hover:bg-zinc-800/30 transition-colors">
+                    <div className="w-28 shrink-0 text-sm font-medium text-zinc-300">{formatDate(dateKey)}</div>
                     <div className="flex-1 flex flex-wrap gap-1.5 min-w-0">
                       {dateOrders.map(o => (
-                        <span key={o.rowIndex} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full whitespace-nowrap">
-                          {o.customer} <span className="text-slate-400">{o.qty}</span>
+                        <span key={o.rowIndex} className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md border border-zinc-700/50">
+                          {o.customer} <span className="text-zinc-600">{o.qty}</span>
                         </span>
                       ))}
                     </div>
-                    <div className="shrink-0 text-sm font-semibold text-slate-600 tabular-nums w-16 text-right">{totalQty} pcs</div>
-                    <div className="shrink-0 w-20 text-right">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${allDone ? STATUS_STYLES['DONE'] : STATUS_STYLES['IN_PROGRESS']}`}>
-                        {statusSummary}
-                      </span>
-                    </div>
-                    <div className="shrink-0 w-20 text-right">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${RISK_STYLES[worstRisk]}`}>
-                        {RISK_LABELS[worstRisk]}
-                      </span>
-                    </div>
+                    <div className="shrink-0 text-sm font-medium text-zinc-400 tabular-nums w-16 text-right">{totalQty} pcs</div>
+                    <span className={`shrink-0 text-[11px] px-2 py-0.5 rounded-md font-medium ${allDone ? STATUS_D['DONE'] : STATUS_D['IN_PROGRESS']}`}>{statusSummary}</span>
+                    <span className={`shrink-0 text-[11px] px-2 py-0.5 rounded-md font-medium ${RISK_D[worstRisk]}`}>{RISK_LABELS[worstRisk]}</span>
                   </div>
                 );
               })}
             </div>
 
-            {/* Pagination — only when month orders > 8 */}
             {totalPages > 1 && (
-              <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-center">
-                <PaginationBar current={orderPage} total={totalPages} onChange={p => setOrderPage(p)} />
+              <div className="px-5 py-3 border-t border-zinc-800 flex justify-center">
+                <div className="flex items-center gap-1">
+                  <button onClick={() => orderPage > 1 && setOrderPage(orderPage - 1)} disabled={orderPage === 1}
+                    className="px-2 py-1 rounded-md text-xs text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 disabled:opacity-30 transition-colors">Prev</button>
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button key={i} onClick={() => setOrderPage(i + 1)}
+                      className={`min-w-[28px] h-7 rounded-md text-xs font-medium transition-colors ${orderPage === i + 1 ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-500 hover:bg-zinc-800'}`}>
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button onClick={() => orderPage < totalPages && setOrderPage(orderPage + 1)} disabled={orderPage === totalPages}
+                    className="px-2 py-1 rounded-md text-xs text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 disabled:opacity-30 transition-colors">Next</button>
+                </div>
               </div>
             )}
           </>
@@ -285,76 +238,33 @@ export default function DashboardPage() {
   );
 }
 
-function PaginationBar({ current, total, onChange }: { current: number; total: number; onChange: (p: number) => void }) {
-  const pages: (number | '...')[] = [];
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (current > 3) pages.push('...');
-    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
-    if (current < total - 2) pages.push('...');
-    pages.push(total);
-  }
-
-  const btn = (label: React.ReactNode, page: number, active = false, disabled = false) => (
-    <button
-      key={String(label)}
-      onClick={() => !disabled && onChange(page)}
-      disabled={disabled}
-      className={`min-w-[32px] h-8 px-2 rounded-lg text-sm font-medium transition-colors
-        ${active ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'}
-        ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
-    >
-      {label}
-    </button>
-  );
-
-  return (
-    <div className="flex items-center gap-1">
-      {btn('‹ Back', current - 1, false, current === 1)}
-      {pages.map((p, i) =>
-        p === '...'
-          ? <span key={`ellipsis-${i}`} className="px-1 text-slate-400 text-sm select-none">…</span>
-          : btn(p, p, p === current)
-      )}
-      {btn('Next ›', current + 1, false, current === total)}
-    </div>
-  );
-}
-
-function StatCard({ label, value, sub, color, icon }: {
-  label: string; value: number; sub: string; color: string; icon: React.ReactNode;
-}) {
-  const colors: Record<string, string> = {
-    indigo: 'bg-indigo-50 text-indigo-600',
-    amber: 'bg-amber-50 text-amber-600',
-    red: 'bg-red-50 text-red-600',
-    green: 'bg-green-50 text-green-600',
+function StatCard({ label, value, sub, color }: { label: string; value: number; sub: string; color: string }) {
+  const c: Record<string, { text: string; dot: string }> = {
+    indigo: { text: 'text-indigo-400', dot: 'bg-indigo-500' },
+    amber: { text: 'text-amber-400', dot: 'bg-amber-500' },
+    red: { text: 'text-red-400', dot: 'bg-red-500' },
+    emerald: { text: 'text-emerald-400', dot: 'bg-emerald-500' },
   };
+  const s = c[color] || c.indigo;
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-      <div className="flex items-start justify-between mb-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colors[color]}`}>
-          {icon}
-        </div>
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className={`w-2 h-2 rounded-full ${s.dot}`} />
+        <span className="text-xs text-zinc-500">{label}</span>
       </div>
-      <div className="text-3xl font-bold text-slate-800 mb-1">{value}</div>
-      <div className="text-sm font-medium text-slate-700">{label}</div>
-      <div className="text-xs text-slate-400 mt-0.5">{sub}</div>
+      <div className={`text-3xl font-bold ${s.text} tabular-nums`}>{value}</div>
+      <div className="text-xs text-zinc-600 mt-1">{sub}</div>
     </div>
   );
 }
 
 function LoadingState() {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 h-28 animate-pulse bg-slate-100" />
-        ))}
+    <div className="space-y-4 max-w-7xl mx-auto">
+      <div className="grid grid-cols-4 gap-3">
+        {[1, 2, 3, 4].map(i => <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900 h-28 animate-pulse" />)}
       </div>
-      <div className="bg-white rounded-2xl border border-slate-200 h-64 animate-pulse bg-slate-100" />
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 h-64 animate-pulse" />
     </div>
   );
 }
@@ -362,16 +272,14 @@ function LoadingState() {
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
-        <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 grid place-items-center mb-4">
+        <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
         </svg>
       </div>
-      <h3 className="text-lg font-semibold text-slate-800 mb-2">Gagal Memuat Data</h3>
-      <p className="text-sm text-slate-500 mb-4 max-w-sm">{message}</p>
-      <button onClick={onRetry} className="bg-indigo-600 text-white px-5 py-2 rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors">
-        Coba Lagi
-      </button>
+      <h3 className="text-lg font-semibold text-zinc-200 mb-2">Gagal Memuat Data</h3>
+      <p className="text-sm text-zinc-500 mb-4 max-w-sm">{message}</p>
+      <button onClick={onRetry} className="bg-zinc-100 text-zinc-900 px-5 py-2 rounded-lg text-sm font-medium hover:bg-white transition-colors">Coba Lagi</button>
     </div>
   );
 }
