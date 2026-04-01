@@ -1,6 +1,28 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PAKET1_OPTIONS, PAKET2_OPTIONS } from '@/lib/constants';
+
+// API Wilayah Indonesia
+const WILAYAH_API = 'https://www.emsifa.com/api-wilayah-indonesia/api';
+
+interface Wilayah { id: string; name: string }
+
+function useWilayah(level: string, parentId?: string) {
+  const [data, setData] = useState<Wilayah[]>([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (level === 'provinces') {
+      setLoading(true);
+      fetch(`${WILAYAH_API}/provinces.json`).then(r => r.json()).then(setData).catch(() => {}).finally(() => setLoading(false));
+    } else if (parentId) {
+      setLoading(true);
+      fetch(`${WILAYAH_API}/${level}/${parentId}.json`).then(r => r.json()).then(setData).catch(() => {}).finally(() => setLoading(false));
+    } else {
+      setData([]);
+    }
+  }, [level, parentId]);
+  return { data, loading };
+}
 
 interface OrderItem {
   id: number;
@@ -43,10 +65,18 @@ function weekLater() {
 export default function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [customer, setCustomer] = useState('');
   const [alamat, setAlamat] = useState('');
+  const [provId, setProvId] = useState('');
   const [provinsi, setProvinsi] = useState('');
+  const [kabId, setKabId] = useState('');
   const [kabupaten, setKabupaten] = useState('');
+  const [kecId, setKecId] = useState('');
   const [kecamatan, setKecamatan] = useState('');
   const [desa, setDesa] = useState('');
+
+  const { data: provList, loading: provLoading } = useWilayah('provinces');
+  const { data: kabList, loading: kabLoading } = useWilayah('regencies', provId);
+  const { data: kecList, loading: kecLoading } = useWilayah('districts', kabId);
+  const { data: desaList, loading: desaLoading } = useWilayah('villages', kecId);
   const [noHp, setNoHp] = useState('');
   const [namaTim, setNamaTim] = useState('');
   const [items, setItems] = useState<OrderItem[]>([{ id: 1, paket: '', bahan: '' }]);
@@ -74,8 +104,9 @@ export default function CreateOrderDrawer({ open, onClose }: { open: boolean; on
   }
 
   function handleReset() {
-    setCustomer(''); setAlamat(''); setProvinsi(''); setKabupaten('');
-    setKecamatan(''); setDesa(''); setNoHp(''); setNamaTim('');
+    setCustomer(''); setAlamat(''); setProvId(''); setProvinsi('');
+    setKabId(''); setKabupaten(''); setKecId(''); setKecamatan('');
+    setDesa(''); setNoHp(''); setNamaTim('');
     setItems([{ id: 1, paket: '', bahan: '' }]); setTglOrder(today());
     setDeadline(weekLater()); setKeterangan(''); setKekurangan('');
     setSelectedPromos([]);
@@ -120,32 +151,43 @@ export default function CreateOrderDrawer({ open, onClose }: { open: boolean; on
               </div>
               <div>
                 <label className={`${labelCls} text-amber-400`}>Provinsi</label>
-                <select value={provinsi} onChange={e => setProvinsi(e.target.value)} className={selectCls}>
-                  <option value="">Pilih provinsi...</option>
-                  <option value="jawa-timur">Jawa Timur</option>
-                  <option value="jawa-tengah">Jawa Tengah</option>
-                  <option value="jawa-barat">Jawa Barat</option>
-                  <option value="dki-jakarta">DKI Jakarta</option>
-                  <option value="bali">Bali</option>
+                <select value={provId} onChange={e => {
+                  const sel = provList.find(p => p.id === e.target.value);
+                  setProvId(e.target.value); setProvinsi(sel?.name || '');
+                  setKabId(''); setKabupaten(''); setKecId(''); setKecamatan(''); setDesa('');
+                }} className={selectCls} disabled={provLoading}>
+                  <option value="">{provLoading ? 'Memuat...' : 'Pilih provinsi...'}</option>
+                  {provList.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className={labelCls}>Kabupaten/Kota</label>
-                <select value={kabupaten} onChange={e => setKabupaten(e.target.value)} className={selectCls} disabled={!provinsi}>
-                  <option value="">{provinsi ? 'Pilih kabupaten/kota...' : 'Pilih provinsi dulu'}</option>
+                <select value={kabId} onChange={e => {
+                  const sel = kabList.find(k => k.id === e.target.value);
+                  setKabId(e.target.value); setKabupaten(sel?.name || '');
+                  setKecId(''); setKecamatan(''); setDesa('');
+                }} className={selectCls} disabled={!provId || kabLoading}>
+                  <option value="">{kabLoading ? 'Memuat...' : !provId ? 'Pilih provinsi dulu' : 'Pilih kabupaten/kota...'}</option>
+                  {kabList.map(k => <option key={k.id} value={k.id}>{k.name}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Kecamatan</label>
-                  <select value={kecamatan} onChange={e => setKecamatan(e.target.value)} className={selectCls} disabled={!kabupaten}>
-                    <option value="">{kabupaten ? 'Pilih kecamatan...' : 'Pilih kab/kota dulu'}</option>
+                  <select value={kecId} onChange={e => {
+                    const sel = kecList.find(k => k.id === e.target.value);
+                    setKecId(e.target.value); setKecamatan(sel?.name || '');
+                    setDesa('');
+                  }} className={selectCls} disabled={!kabId || kecLoading}>
+                    <option value="">{kecLoading ? 'Memuat...' : !kabId ? 'Pilih kab/kota dulu' : 'Pilih kecamatan...'}</option>
+                    {kecList.map(k => <option key={k.id} value={k.id}>{k.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className={labelCls}>Desa/Kelurahan</label>
-                  <select value={desa} onChange={e => setDesa(e.target.value)} className={selectCls} disabled={!kecamatan}>
-                    <option value="">{kecamatan ? 'Pilih desa...' : 'Pilih kecamatan dulu'}</option>
+                  <select value={desa} onChange={e => setDesa(e.target.value)} className={selectCls} disabled={!kecId || desaLoading}>
+                    <option value="">{desaLoading ? 'Memuat...' : !kecId ? 'Pilih kecamatan dulu' : 'Pilih desa...'}</option>
+                    {desaList.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
                   </select>
                 </div>
               </div>
