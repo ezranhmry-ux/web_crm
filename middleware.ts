@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const SECRET = process.env.SESSION_SECRET || 'ayres-crm-default-secret-key';
 const COOKIE_NAME = 'session';
 
-const PUBLIC_PATHS = ['/', '/tracking', '/invoice', '/api'];
+const PUBLIC_PATHS = ['/', '/tracking', '/api'];
 
 async function hmacSign(payload: string): Promise<string> {
   const encoder = new TextEncoder();

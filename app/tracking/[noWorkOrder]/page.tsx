@@ -88,12 +88,6 @@ export default function TrackingPage() {
             <p className="text-xs sm:text-sm uppercase tracking-[0.18em] text-slate-400">Order Details</p>
             <h1 className="text-xl sm:text-3xl font-semibold text-slate-900 truncate">{order.customer}</h1>
           </div>
-          <Link
-            href={`/invoice/${encodeURIComponent(order.noWorkOrder)}`}
-            className="rounded-full border border-slate-200 bg-white px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-slate-700 shadow-sm shrink-0"
-          >
-            Invoice
-          </Link>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
