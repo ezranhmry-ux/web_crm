@@ -74,8 +74,20 @@ const ADMIN_NAV: SideNavItem[] = [
    ADMIN SIDEBAR LAYOUT
    ═══════════════════════════════════════════════════════════ */
 
+// Map menu names to sidebar hrefs for filtering
+const MENU_HREF_MAP: Record<string, string[]> = {
+  'Dashboard': ['/dashboard'],
+  'Orders': ['/orders'],
+  'Work Orders': ['/work-orders'],
+  'Produksi': ['/produksi'],
+  'Laporan': ['/laporan/produksi', '/laporan/penggunaan-bahan'],
+  'Stok': ['/stok'],
+  'Settings': ['/setting'],
+  'Master Data': ['/master'],
+};
+
 function AdminLayout({ user, logout, children }: {
-  user: { username: string; role: Role };
+  user: { username: string; role: Role; nama?: string; menuAccess?: string[] };
   logout: () => Promise<void>;
   children: React.ReactNode;
 }) {
@@ -94,6 +106,26 @@ function AdminLayout({ user, logout, children }: {
 
   const handleLogout = async () => { await logout(); router.replace('/'); };
 
+  // Filter nav items based on menuAccess (undefined/empty = full access)
+  const hasMenuAccess = (item: SideNavItem): boolean => {
+    if (!user.menuAccess || user.menuAccess.length === 0) return true;
+    if (item.href) {
+      return Object.entries(MENU_HREF_MAP).some(([menu, hrefs]) =>
+        user.menuAccess!.includes(menu) && hrefs.includes(item.href!)
+      );
+    }
+    if (item.children) {
+      return item.children.some(child =>
+        Object.entries(MENU_HREF_MAP).some(([menu, hrefs]) =>
+          user.menuAccess!.includes(menu) && hrefs.includes(child.href)
+        )
+      );
+    }
+    return false;
+  };
+
+  const filteredNav = ADMIN_NAV.filter(hasMenuAccess);
+
   return (
     <div className="flex h-screen bg-[#0a0e17]">
       {/* Mobile overlay */}
@@ -108,7 +140,7 @@ function AdminLayout({ user, logout, children }: {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-          {ADMIN_NAV.map((item) => {
+          {filteredNav.map((item) => {
             if (item.children) {
               const childActive = item.children.some(c => pathname === c.href);
               return (
@@ -149,11 +181,11 @@ function AdminLayout({ user, logout, children }: {
         <div className="px-4 py-4 border-t border-white/[0.06] shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-emerald-600 grid place-items-center text-white text-[11px] font-bold shrink-0">
-              {user.username.charAt(0).toUpperCase()}A
+              {(user.nama || user.username).charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm text-white font-medium truncate">Super Admin</p>
-              <p className="text-[11px] text-slate-500">Super Admin</p>
+              <p className="text-sm text-white font-medium truncate">{user.nama || user.username}</p>
+              <p className="text-[11px] text-slate-500 capitalize">{user.role}</p>
             </div>
             <button onClick={handleLogout} className="text-slate-500 hover:text-red-400 transition-colors p-1" title="Keluar">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
@@ -171,7 +203,7 @@ function AdminLayout({ user, logout, children }: {
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-400 font-medium hidden sm:block">Super Admin</span>
+            <span className="text-sm text-slate-400 font-medium hidden sm:block">{user.nama || user.username}</span>
             <button className="text-slate-500 hover:text-slate-300 transition-colors p-1">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>
             </button>
@@ -318,9 +350,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     </div>
   );
 
-  if (user.role === 'admin') {
-    return <AdminLayout user={user} logout={logout}>{children}</AdminLayout>;
-  }
-
-  return <DefaultLayout user={user} logout={logout}>{children}</DefaultLayout>;
+  // Use AdminLayout for all users — sidebar items filtered by menuAccess
+  return <AdminLayout user={user} logout={logout}>{children}</AdminLayout>;
 }

@@ -33,6 +33,17 @@ CREATE TABLE `role_menu_access` (
   CONSTRAINT `fk_rma_role` FOREIGN KEY (`role_id`) REFERENCES `roles`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE `role_stage_access` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `role_id` INT UNSIGNED NOT NULL,
+  `stage_id` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_rsa_role` (`role_id`),
+  KEY `fk_rsa_stage` (`stage_id`),
+  CONSTRAINT `fk_rsa_role` FOREIGN KEY (`role_id`) REFERENCES `roles`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_rsa_stage` FOREIGN KEY (`stage_id`) REFERENCES `production_stages`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE `users` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `nama` VARCHAR(150) NOT NULL,

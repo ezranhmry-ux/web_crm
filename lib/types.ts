@@ -54,6 +54,9 @@ export interface DashboardStats {
 export interface User {
   username: string;
   role: Role;
+  nama?: string;
+  menuAccess?: string[];
+  stageAccess?: number[];
 }
 
 export interface ApiResponse<T = unknown> {

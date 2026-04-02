@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { setSession } from '@/lib/session';
-import { queryOne } from '@/lib/db';
+import { query, queryOne } from '@/lib/db';
 
 interface UserRow {
   id: number;
@@ -11,6 +11,9 @@ interface UserRow {
   role_nama: string;
   is_super_admin: number;
 }
+
+interface MenuRow { menu_name: string; }
+interface StageRow { stage_id: number; }
 
 function mapRole(row: UserRow): string {
   if (row.is_super_admin) return 'admin';
@@ -29,7 +32,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Username dan password wajib diisi.' }, { status: 400 });
     }
 
-    // Query database
     const row = await queryOne<UserRow>(
       `SELECT u.id, u.nama, u.email, u.password, u.role_id,
               r.nama AS role_nama, r.is_super_admin
@@ -44,7 +46,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Username atau password salah.' });
     }
 
-    const user = { username: row.email, role: mapRole(row) as 'admin' | 'cs' | 'produksi' };
+    // Fetch menu access for this role
+    const menus = await query<MenuRow>(
+      'SELECT menu_name FROM role_menu_access WHERE role_id = ?',
+      [row.role_id]
+    );
+    const menuAccess = row.is_super_admin
+      ? ['Dashboard', 'Orders', 'Work Orders', 'Produksi', 'Laporan', 'Stok', 'Settings', 'Master Data']
+      : menus.map(m => m.menu_name);
+
+    // Fetch stage access for this role
+    let stageAccess: number[] = [];
+    if (row.is_super_admin) {
+      // Super admin gets all stages
+      stageAccess = [];
+    } else {
+      const stages = await query<StageRow>(
+        'SELECT stage_id FROM role_stage_access WHERE role_id = ?',
+        [row.role_id]
+      );
+      stageAccess = stages.map(s => s.stage_id);
+    }
+
+    const user = {
+      username: row.email,
+      role: mapRole(row) as 'admin' | 'cs' | 'produksi',
+      nama: row.nama,
+      menuAccess,
+      stageAccess,
+    };
     await setSession(user);
 
     return NextResponse.json({ success: true, data: user });

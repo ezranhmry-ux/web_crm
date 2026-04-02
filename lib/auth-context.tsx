@@ -39,7 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     const data = await res.json();
     if (data.success && data.data) {
-      setUser({ username: data.data.username, role: data.data.role as Role });
+      setUser({
+        username: data.data.username,
+        role: data.data.role as Role,
+        nama: data.data.nama,
+        menuAccess: data.data.menuAccess,
+        stageAccess: data.data.stageAccess,
+      });
       return { success: true };
     }
     return { success: false, error: data.error || 'Username atau password salah.' };
