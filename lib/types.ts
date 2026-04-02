@@ -32,6 +32,8 @@ export interface Order {
   tglSelesai: string;
   status: OrderStatus;
   progress: Progress;
+  progressPercent?: number;
+  currentStageName?: string;
   tglKirim?: string;
   trackingLink?: string;
   daysLeft?: number | null;

@@ -8,7 +8,7 @@ import { invalidateCache } from '@/lib/cache';
 import { useToast } from '@/lib/toast';
 import { Order, OrderStatus } from '@/lib/types';
 import { STAGES, RISK_LABELS, STATUS_LABELS } from '@/lib/constants';
-import { formatDate, getProgressPercent, getCurrentStage } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import CreateOrderDrawer from './create-order-drawer';
 
 const STATUS_STYLES_DARK: Record<string, string> = {
@@ -331,7 +331,7 @@ export default function OrdersPage() {
             </thead>
             <tbody>
               {paged.map(order => {
-                const pct = getProgressPercent(order.progress);
+                const pct = order.progressPercent ?? 0;
                 return (
                   <tr key={order.rowIndex}
                     className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors cursor-pointer group"
@@ -356,7 +356,7 @@ export default function OrdersPage() {
                         </div>
                         <span className="text-[11px] text-white/30 w-7 shrink-0 tabular-nums">{pct}%</span>
                       </div>
-                      <div className="text-[11px] text-white/20 mt-0.5">{getCurrentStage(order.progress)}</div>
+                      <div className="text-[11px] text-white/20 mt-0.5">{order.currentStageName || 'Belum mulai'}</div>
                     </td>
                     <td className="px-4 py-3.5">
                       <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${STATUS_STYLES_DARK[order.status]}`}>

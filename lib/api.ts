@@ -16,13 +16,19 @@ export async function apiGetOrders(): Promise<ApiResponse<Order[]>> {
   const cached = getCached<Order[]>('wp_orders');
   if (cached) return { success: true, data: cached };
 
-  const [ordersRes, itemsRes] = await Promise.all([
+  const [ordersRes, itemsRes, woRes, wpRes, stagesRes] = await Promise.all([
     fetch('/api/db/orders').then(r => r.json()),
     fetch('/api/db/order_items').then(r => r.json()),
+    fetch('/api/db/work_orders').then(r => r.json()),
+    fetch('/api/db/wo_progress').then(r => r.json()),
+    fetch('/api/db/production_stages').then(r => r.json()),
   ]);
   if (ordersRes.success && ordersRes.data) {
     const items = itemsRes.success ? itemsRes.data : [];
-    const orders = mapOrders(ordersRes.data, items);
+    const wos = woRes.success ? woRes.data : [];
+    const wps = wpRes.success ? wpRes.data : [];
+    const stages = stagesRes.success ? stagesRes.data : [];
+    const orders = mapOrders(ordersRes.data, items, wos, wps, stages);
     setCached('wp_orders', orders);
     return { success: true, data: orders };
   }
@@ -39,12 +45,15 @@ export async function apiGetDashboard(): Promise<ApiResponse<DashboardStats>> {
   const cached = getCached<DashboardStats>('wp_dashboard');
   if (cached) return { success: true, data: cached };
 
-  const [oRes, iRes] = await Promise.all([
+  const [oRes, iRes, woRes, wpRes, stagesRes] = await Promise.all([
     fetch('/api/db/orders').then(r => r.json()),
     fetch('/api/db/order_items').then(r => r.json()),
+    fetch('/api/db/work_orders').then(r => r.json()),
+    fetch('/api/db/wo_progress').then(r => r.json()),
+    fetch('/api/db/production_stages').then(r => r.json()),
   ]);
   if (oRes.success && oRes.data) {
-    const orders = mapOrders(oRes.data, iRes.success ? iRes.data : []);
+    const orders = mapOrders(oRes.data, iRes.success ? iRes.data : [], woRes.success ? woRes.data : [], wpRes.success ? wpRes.data : [], stagesRes.success ? stagesRes.data : []);
     const stats = computeStats(orders);
     setCached('wp_dashboard', stats);
     return { success: true, data: stats };
@@ -98,7 +107,27 @@ interface DbItem {
   qty: number;
 }
 
-function mapOrders(rows: DbOrder[], items: DbItem[] = []): Order[] {
+interface DbWo {
+  id: number;
+  order_id: number;
+  no_wo: string;
+  current_stage_id: number | null;
+  status: string;
+}
+
+interface DbWp {
+  work_order_id: number;
+  stage_id: number;
+  status: string;
+}
+
+interface DbStage {
+  id: number;
+  urutan: number;
+  nama: string;
+}
+
+function mapOrders(rows: DbOrder[], items: DbItem[] = [], wos: DbWo[] = [], wps: DbWp[] = [], stages: DbStage[] = []): Order[] {
   const today = new Date(); today.setHours(0, 0, 0, 0);
 
   // Group items by order_id (collect all)
@@ -108,6 +137,25 @@ function mapOrders(rows: DbOrder[], items: DbItem[] = []): Order[] {
     itemsMap[item.order_id].push(item);
   }
 
+  // Group work orders by order_id
+  const woByOrder: Record<number, DbWo[]> = {};
+  for (const wo of wos) {
+    if (!woByOrder[wo.order_id]) woByOrder[wo.order_id] = [];
+    woByOrder[wo.order_id].push(wo);
+  }
+
+  // Group wo_progress by work_order_id
+  const wpByWo: Record<number, DbWp[]> = {};
+  for (const wp of wps) {
+    if (!wpByWo[wp.work_order_id]) wpByWo[wp.work_order_id] = [];
+    wpByWo[wp.work_order_id].push(wp);
+  }
+
+  // Sort stages by urutan
+  const sortedStages = [...stages].sort((a, b) => a.urutan - b.urutan);
+  const stageMap: Record<number, DbStage> = {};
+  for (const s of stages) stageMap[s.id] = s;
+
   return rows.map((r, i) => {
     const orderItems = itemsMap[r.id] || [];
     const paketNames = orderItems.map(it => it.paket_nama).filter(Boolean).join(', ');
@@ -116,7 +164,69 @@ function mapOrders(rows: DbOrder[], items: DbItem[] = []): Order[] {
     const deadline = r.estimasi_deadline ? new Date(r.estimasi_deadline) : null;
     const daysLeft = deadline ? Math.floor((deadline.getTime() - today.getTime()) / 86400000) : null;
 
-    const status = r.status === 'DONE' ? 'DONE' : r.status === 'IN_PROGRESS' || r.status === 'CONFIRMED' ? 'IN_PROGRESS' : 'OPEN';
+    let status: 'OPEN'|'IN_PROGRESS'|'DONE' = r.status === 'DONE' ? 'DONE' : r.status === 'IN_PROGRESS' || r.status === 'CONFIRMED' ? 'IN_PROGRESS' : 'OPEN';
+
+    const fmtDate = (d: string) => {
+      if (!d) return '';
+      try { const dt = new Date(d); return `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()}`; }
+      catch { return d; }
+    };
+
+    // Compute real progress from wo_progress
+    const orderWos = woByOrder[r.id] || [];
+    const woNoList = orderWos.map(w => w.no_wo).filter(Boolean);
+    let progressPercent = 0;
+    let currentStageName = 'Belum mulai';
+
+    if (orderWos.length > 0 && sortedStages.length > 0) {
+      // Aggregate across all WOs for this order
+      let totalDone = 0;
+      let totalStages = 0;
+      let latestActiveStageId: number | null = null;
+
+      for (const wo of orderWos) {
+        const progressList = wpByWo[wo.id] || [];
+        const selesaiCount = progressList.filter(p => p.status === 'SELESAI').length;
+        totalDone += selesaiCount;
+        totalStages += sortedStages.length;
+
+        // Find current active stage (TERSEDIA or SEDANG)
+        const active = progressList.find(p => p.status === 'SEDANG') || progressList.find(p => p.status === 'TERSEDIA');
+        if (active) latestActiveStageId = active.stage_id;
+        // If all done for this WO
+        if (selesaiCount === sortedStages.length && progressList.length > 0) {
+          latestActiveStageId = null; // completed
+        }
+      }
+
+      if (totalStages > 0) {
+        progressPercent = Math.round((totalDone / totalStages) * 100);
+      }
+
+      if (progressPercent >= 100) {
+        currentStageName = 'Selesai';
+      } else if (latestActiveStageId && stageMap[latestActiveStageId]) {
+        currentStageName = stageMap[latestActiveStageId].nama;
+      } else if (totalDone > 0) {
+        // Find the last completed stage
+        for (const wo of orderWos) {
+          const progressList = wpByWo[wo.id] || [];
+          const completed = progressList
+            .filter(p => p.status === 'SELESAI')
+            .map(p => stageMap[p.stage_id])
+            .filter(Boolean)
+            .sort((a, b) => b.urutan - a.urutan);
+          if (completed.length > 0) {
+            currentStageName = completed[0].nama + ' (done)';
+            break;
+          }
+        }
+      }
+    }
+
+    // Override status to DONE if progress is 100%
+    if (progressPercent >= 100) status = 'DONE';
+
     let riskLevel: 'SAFE'|'NORMAL'|'NEAR'|'HIGH'|'OVERDUE' = 'NORMAL';
     if (status === 'DONE') riskLevel = 'SAFE';
     else if (daysLeft !== null) {
@@ -124,12 +234,6 @@ function mapOrders(rows: DbOrder[], items: DbItem[] = []): Order[] {
       else if (daysLeft <= 3) riskLevel = 'HIGH';
       else if (daysLeft <= 7) riskLevel = 'NEAR';
     }
-
-    const fmtDate = (d: string) => {
-      if (!d) return '';
-      try { const dt = new Date(d); return `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()}`; }
-      catch { return d; }
-    };
 
     return {
       rowIndex: r.id,
@@ -143,10 +247,12 @@ function mapOrders(rows: DbOrder[], items: DbItem[] = []): Order[] {
       bahan: bahanNames || r.bahan_kain || '',
       dpProduksi: fmtDate(r.tanggal_order),
       dlCust: fmtDate(r.estimasi_deadline),
-      noWorkOrder: '',
+      noWorkOrder: woNoList.join(', '),
       tglSelesai: fmtDate(r.estimasi_deadline),
       status,
       progress: { PROOFING: false, WAITINGLIST: false, PRINT: false, PRES: false, CUT_FABRIC: false, JAHIT: false, QC_JAHIT_STEAM: false, FINISHING: false, PENGIRIMAN: false },
+      progressPercent,
+      currentStageName,
       daysLeft,
       riskLevel,
       sallaryProduct: Number(r.nominal_order) || 0,
