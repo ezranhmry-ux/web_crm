@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, insert, execute } from '@/lib/db';
 
+// Convert ISO datetime strings (e.g. "2026-04-06T08:09:46.566Z") to MySQL format ("2026-04-06 08:09:46")
+function toMySQLDatetime(val: unknown): unknown {
+  if (typeof val !== 'string') return val;
+  // Match ISO 8601 datetime: 2026-04-06T00:00:00.000Z
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
+    return val.slice(0, 19).replace('T', ' ');
+  }
+  return val;
+}
+
+function sanitizeValues(vals: unknown[]): unknown[] {
+  return vals.map(toMySQLDatetime);
+}
+
 // Whitelist of allowed tables to prevent SQL injection
 const ALLOWED_TABLES: Record<string, { columns: string; searchCols?: string[] }> = {
   customers:         { columns: '*', searchCols: ['nama', 'no_hp'] },
@@ -96,7 +110,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tab
 
     const id = await insert(
       `INSERT INTO \`${table}\` (${keys.map(k => `\`${k}\``).join(', ')}) VALUES (${placeholders})`,
-      vals
+      sanitizeValues(vals)
     );
 
     return NextResponse.json({ success: true, data: { id } });
@@ -117,7 +131,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ tabl
     if (!id) return NextResponse.json({ success: false, error: 'ID required' }, { status: 400 });
 
     const sets = Object.keys(fields).map(k => `\`${k}\` = ?`).join(', ');
-    const vals = [...Object.values(fields), id];
+    const vals = sanitizeValues([...Object.values(fields), id]);
 
     const affected = await execute(`UPDATE \`${table}\` SET ${sets} WHERE id = ?`, vals);
     return NextResponse.json({ success: true, data: { affected } });
