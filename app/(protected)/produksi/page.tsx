@@ -94,7 +94,7 @@ export default function ProduksiPage() {
   // Move WO to next status or next stage
   async function handleMulai(progressId: number) {
     try {
-      await dbUpdate('wo_progress', progressId, { status: 'SEDANG', started_at: new Date().toISOString() });
+      await dbUpdate('wo_progress', progressId, { status: 'SEDANG', started_at: new Date().toISOString().slice(0, 19).replace('T', ' ') });
       toast.success('Dimulai', 'WO dipindahkan ke Sedang.');
       await fetchData();
     } catch (e) { toast.error('Gagal', String(e)); }
@@ -102,7 +102,7 @@ export default function ProduksiPage() {
 
   async function handleSelesai(progressRow: Row) {
     try {
-      await dbUpdate('wo_progress', progressRow.id, { status: 'SELESAI', completed_at: new Date().toISOString() });
+      await dbUpdate('wo_progress', progressRow.id, { status: 'SELESAI', completed_at: new Date().toISOString().slice(0, 19).replace('T', ' ') });
 
       const currentStageIdx = stages.findIndex((s: Row) => s.id === progressRow.stage_id);
       if (currentStageIdx < stages.length - 1) {
