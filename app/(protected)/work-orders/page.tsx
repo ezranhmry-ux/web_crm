@@ -128,7 +128,7 @@ export default function WorkOrdersPage() {
         paket: paketNama,
         bahan: bahanNama,
         jumlah: totalQty,
-        deadline: order.estimasi_deadline,
+        deadline: order.estimasi_deadline ? new Date(order.estimasi_deadline).toISOString().split('T')[0] : null,
         keterangan: order.keterangan || '',
         status: 'PROSES_PRODUKSI',
         current_stage_id: firstStageId,

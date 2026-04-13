@@ -584,7 +584,7 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
         work_order_id: wo.id,
         nama_spesifikasi: namaSpec,
         jumlah: Number(jumlah) || 0,
-        deadline: wo.deadlineRaw || wo.deadline,
+        deadline: (() => { const d = wo.deadlineRaw || wo.deadline; return d ? new Date(d).toISOString().split('T')[0] : null; })(),
         dokumen_desain: dokDesain || null, dokumen_pattern: dokPattern || null,
         tagline, authentic, info_ukuran: infoUkuran, info_logo: infoLogo,
         info_packing: infoPacking, webbing, font_nomor: fontNomor,
