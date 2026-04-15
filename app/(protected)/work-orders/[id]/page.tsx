@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { dbGet, dbCreate, dbUpdate, dbDelete } from '@/lib/api-db';
 import { useToast } from '@/lib/toast';
@@ -297,82 +297,95 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
     const bRows = allSpecBahan.filter((b: Row) => String(b.spesifikasi_id) === String(spec.id));
     const stages = ['Approval Design','Approval Pattern',...PROD_STAGES];
     const acc = [['TAGLINE',spec.tagline],['AUTHENTIC',spec.authentic],['SIZE',spec.info_ukuran],['LOGO',spec.info_logo],['PACKING',spec.info_packing],['WEBBING',spec.webbing]];
-    const desainImg = spec.dokumen_desain ? `<img src="${spec.dokumen_desain}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : `<div style="height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px">Desain</div>`;
-    const patternImg = spec.dokumen_pattern ? `<img src="${spec.dokumen_pattern}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : `<div style="height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px">Pattern</div>`;
-    // Style tokens
-    const bdr = '#d1d5db';
-    const B = `border:1px solid ${bdr};`;
-    const hdr = `${B}background:#1e293b;color:#fff;font-weight:700;padding:1px 10px 11px;font-size:10px;text-align:center;vertical-align:middle;letter-spacing:0.3px;`;
-    const lbl = `${B}font-weight:700;padding:1px 10px 11px;font-size:10px;background:#f8fafc;`;
-    const val = `${B}padding:1px 10px 11px;font-size:10px;`;
-    return `<div style="background:#fff;padding:32px 40px;font-family:'Segoe UI',system-ui,Arial,sans-serif;color:#1e293b;width:1200px;line-height:1.45;-webkit-font-smoothing:antialiased">
+    const desainImg = spec.dokumen_desain ? `<img src="${spec.dokumen_desain}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : `<div style="height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:14px">Desain</div>`;
+    const patternImg = spec.dokumen_pattern ? `<img src="${spec.dokumen_pattern}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : `<div style="height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:14px">Pattern</div>`;
+    // Tokens
+    const PRIMARY = '#0f172a';
+    const ACCENT = '#dc2626';
+    const BORDER = '#cbd5e1';
+    const SOFT = '#f8fafc';
+    const B = `border:1px solid ${BORDER};`;
+    const ROW_H = 28;
+    const tdBase = `${B}padding:0;height:${ROW_H}px;`;
+    const hdr = `${tdBase}background:${PRIMARY};`;
+    const lbl = `${tdBase}background:${SOFT};`;
+    const val = `${tdBase}`;
+    const flexL = `display:flex;align-items:center;height:${ROW_H}px;padding:0 12px;font-size:11px;`;
+    const flexC = `display:flex;align-items:center;justify-content:center;height:${ROW_H}px;padding:0 12px;font-size:11px;`;
+    const inHdr = `${flexC}color:#fff;font-weight:700;letter-spacing:0.6px;text-transform:uppercase`;
+    const inLbl = `${flexL}font-weight:700;color:${PRIMARY}`;
+    const inVal = `${flexL}color:${PRIMARY}`;
+    const inValAccent = `${flexL}color:${ACCENT};font-weight:700`;
+    return `<div style="background:#fff;padding:30px 36px;font-family:Arial,Helvetica,sans-serif;color:${PRIMARY};width:1400px;line-height:1.4;-webkit-font-smoothing:antialiased">
 <!-- ═══ HEADER ═══ -->
-<table style="width:100%;margin-bottom:18px"><tr>
+<table style="width:100%;border-collapse:collapse;margin-bottom:20px"><tr>
   <td style="vertical-align:bottom">
-    <div style="display:flex;align-items:center;gap:10px">
-      <img src="${location.origin}/logo/new logo.png" style="height:26px" onerror="this.style.display='none'"/>
-      <span style="font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-0.3px">AYRES APPAREL</span>
+    <div style="display:flex;align-items:center;gap:12px">
+      <img src="${location.origin}/logo/new logo.png" style="height:34px" onerror="this.style.display='none'"/>
+      <span style="font-size:26px;font-weight:800;color:${PRIMARY};letter-spacing:-0.3px">AYRES APPAREL</span>
     </div>
-    <div style="height:2px;background:#1e293b;margin-top:10px"></div>
+    <div style="height:3px;background:${PRIMARY};margin-top:12px"></div>
   </td>
-  <td style="vertical-align:bottom;text-align:right;width:180px">
-    <div style="font-size:8px;color:#64748b;font-weight:600;letter-spacing:1px;text-transform:uppercase">Work Order No.</div>
-    <div style="font-size:17px;font-weight:800;color:#0f172a;border:2px solid #1e293b;padding:1px 18px 11px;display:inline-block;margin-top:4px">${wo.noWo}</div>
+  <td style="vertical-align:bottom;text-align:right;width:230px">
+    <div style="font-size:9px;color:#64748b;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Work Order No.</div>
+    <div style="font-size:20px;font-weight:800;color:${PRIMARY};border:2.5px solid ${PRIMARY};padding:14px 32px;display:inline-block;line-height:1">${wo.noWo}</div>
   </td>
 </tr></table>
 
 <!-- ═══ MAIN 2-COL ═══ -->
-<table style="width:100%;border-collapse:separate;border-spacing:12px 0"><tr>
+<table style="width:100%;border-collapse:separate;border-spacing:14px 0"><tr>
 
-  <!-- LEFT 58% -->
-  <td style="width:58%;vertical-align:top;padding:0">
-    <div style="background:#1e293b;color:#fff;text-align:center;font-size:10px;font-weight:700;padding:1px 0 11px;letter-spacing:1.5px;text-transform:uppercase">Desain Mock Up & Pattern</div>
-    <div style="display:flex;gap:8px;height:300px;margin-top:6px">
-      <div style="flex:1;border:1px solid ${bdr};overflow:hidden">${desainImg}</div>
-      <div style="flex:1;border:1px solid ${bdr};overflow:hidden">${patternImg}</div>
+  <!-- LEFT 60% -->
+  <td style="width:60%;vertical-align:top;padding:0">
+    <div style="background:${PRIMARY};height:${ROW_H}px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase">Desain Mock Up &amp; Pattern</div>
+    <div style="display:flex;gap:10px;height:520px;margin-top:8px">
+      <div style="flex:1;border:1px solid ${BORDER};overflow:hidden">${desainImg}</div>
+      <div style="flex:1;border:1px solid ${BORDER};overflow:hidden">${patternImg}</div>
     </div>
-    <table style="width:100%;border-collapse:collapse;font-size:10px;margin-top:8px">
+    <table style="width:100%;border-collapse:collapse;margin-top:10px">
       <tr>
-        <td style="${hdr}width:50%">Nama Customer</td>
-        <td style="${hdr}">Nama Spesifikasi</td>
+        <td style="${hdr}width:50%"><div style="${inHdr}">Nama Customer</div></td>
+        <td style="${hdr}"><div style="${inHdr}">Nama Spesifikasi</div></td>
       </tr>
       <tr>
-        <td style="${B}text-align:center;padding:1px 10px 11px;font-weight:600">${wo.customer}</td>
-        <td style="${B}text-align:center;padding:1px 10px 11px;font-weight:600">${spec.nama_spesifikasi}</td>
+        <td style="${val}"><div style="${flexC}font-weight:700;font-size:12px;color:${ACCENT}">${wo.customer}</div></td>
+        <td style="${val}"><div style="${flexC}font-weight:700;font-size:12px;color:${ACCENT}">${spec.nama_spesifikasi}</div></td>
       </tr>
     </table>
     <!-- Keterangan Jahit + Font & Number -->
-    <table style="width:100%;border-collapse:separate;border-spacing:8px 0;margin-top:8px"><tr>
+    <table style="width:100%;border-collapse:separate;border-spacing:10px 0;margin-top:10px"><tr>
       <td style="width:50%;vertical-align:top;padding:0">
         <div style="${B}overflow:hidden">
-          <div style="padding:1px 10px 11px;font-weight:700;color:#dc2626;font-size:10px;letter-spacing:0.3px;border-bottom:1px solid ${bdr};background:#fef2f2;text-align:center">KETERANGAN JAHIT</div>
-          <div style="padding:1px 10px 11px;font-size:10px">${spec.keterangan_jahit || '-'}</div>
+          <div style="height:${ROW_H}px;display:flex;align-items:center;justify-content:center;padding:0 12px;font-weight:700;color:${ACCENT};font-size:11px;letter-spacing:0.6px;border-bottom:1px solid ${BORDER};background:#fef2f2;text-transform:uppercase">Keterangan Jahit</div>
+          <div style="padding:10px 12px;font-size:11px;min-height:48px;line-height:1.4">${spec.keterangan_jahit || '-'}</div>
         </div>
       </td>
       <td style="width:50%;vertical-align:top;padding:0">
         <div style="${B}overflow:hidden">
-          <div style="background:#1e293b;color:#fff;font-weight:700;text-align:center;padding:1px 10px 11px;font-size:10px;letter-spacing:0.3px">FONT & NUMBER</div>
-          <div style="padding:1px 10px 11px;font-size:10px">${spec.font_nomor || '-'}</div>
+          <div style="background:${PRIMARY};color:#fff;font-weight:700;height:${ROW_H}px;display:flex;align-items:center;justify-content:center;padding:0 12px;font-size:11px;letter-spacing:0.6px;text-transform:uppercase">Font &amp; Number</div>
+          <div style="padding:10px 12px;font-size:11px;min-height:48px;line-height:1.4">${spec.font_nomor || '-'}</div>
         </div>
       </td>
     </tr></table>
   </td>
 
-  <!-- RIGHT 42% -->
-  <td style="width:42%;vertical-align:top;padding:0">
-    <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:8px">
-      <tr><td style="${lbl}width:32%">NAMA</td><td style="${val}color:#dc2626;font-weight:600">${wo.customer}</td></tr>
-      <tr><td style="${lbl}">PAKET</td><td style="${val}color:#dc2626;font-weight:600">${wo.paket}</td></tr>
-      <tr><td style="${lbl}">JUMLAH</td><td style="${val}color:#dc2626;font-weight:600">${spec.jumlah || 0} PCS</td></tr>
+  <!-- RIGHT 40% -->
+  <td style="width:40%;vertical-align:top;padding:0">
+    <table style="width:100%;border-collapse:collapse;margin-bottom:10px">
+      <tr><td style="${lbl}width:32%"><div style="${inLbl}">NAMA</div></td><td style="${val}"><div style="${inValAccent}">${wo.customer}</div></td></tr>
+      <tr><td style="${lbl}"><div style="${inLbl}">PAKET</div></td><td style="${val}"><div style="${inValAccent}">${wo.paket}</div></td></tr>
+      <tr><td style="${lbl}"><div style="${inLbl}">JUMLAH</div></td><td style="${val}"><div style="${inValAccent}">${spec.jumlah || 0} PCS</div></td></tr>
     </table>
-    <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:8px">
-      <tr><td colspan="2" style="${hdr}">Accessories</td></tr>
-      ${acc.map(([k,v]) => `<tr><td style="${lbl}width:34%">${k}</td><td style="${val}">${v || '-'}</td></tr>`).join('')}
+    <table style="width:100%;border-collapse:collapse;margin-bottom:10px">
+      <tr><td colspan="2" style="${hdr}"><div style="${inHdr}">Accessories</div></td></tr>
+      ${acc.map(([k,v], i) => `<tr><td style="${lbl}width:34%;${i % 2 === 1 ? 'background:#eef2f7' : ''}"><div style="${inLbl}">${k}</div></td><td style="${val}${i % 2 === 1 ? 'background:#fafbfc' : ''}"><div style="${inVal}">${v || '-'}</div></td></tr>`).join('')}
     </table>
-    <table style="width:100%;border-collapse:collapse;font-size:10px">
-      <tr><td style="${hdr}">Penanggung Jawab</td></tr>
+    <table style="width:100%;border-collapse:collapse">
+      <tr><td style="${hdr}"><div style="${inHdr}">Penanggung Jawab</div></td></tr>
       <tr><td style="${B}padding:6px 10px">
-        ${stages.map((s, i) => `<div style="border-bottom:1px solid ${bdr};padding:1px 0 11px;color:#2563eb;font-size:10px">${i+1}. ${s}</div>`).join('')}
+        <table style="width:100%;border-collapse:collapse">
+          ${stages.map((s, i) => `<tr><td style="padding:4px 2px;font-size:10.5px;color:#1e3a8a;font-weight:500;${i < stages.length - 1 ? `border-bottom:1px dashed ${BORDER};` : ''}"><span style="display:inline-block;width:24px;color:#94a3b8;font-weight:700">${String(i+1).padStart(2,'0')}</span>${s}</td></tr>`).join('')}
+        </table>
       </td></tr>
     </table>
   </td>
@@ -381,25 +394,32 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
 
 
 <!-- ═══ FOOTER ═══ -->
-<table style="width:100%;border-collapse:separate;border-spacing:12px 0;margin-top:14px"><tr>
-  <td style="vertical-align:top;width:30%;padding:0">
-    ${bRows.length > 0 ? `<table style="width:100%;border-collapse:collapse;font-size:10px">
-      ${bRows.map((r: Row) => `<tr><td style="${lbl}width:50%">${r.bagian}</td><td style="${val}color:#dc2626;font-weight:600">${r.bahan || '-'}</td></tr>`).join('')}
-    </table>` : ''}
+<table style="width:100%;border-collapse:separate;border-spacing:14px 0;margin-top:16px"><tr>
+  <td style="vertical-align:top;width:34%;padding:0">
+    ${bRows.length > 0 ? `<table style="width:100%;border-collapse:collapse">
+      <tr><td colspan="2" style="${hdr}"><div style="${inHdr}">Bahan</div></td></tr>
+      ${bRows.map((r: Row, i: number) => `<tr><td style="${lbl}width:50%;${i % 2 === 1 ? 'background:#eef2f7' : ''}"><div style="${inLbl}">${r.bagian}</div></td><td style="${val}${i % 2 === 1 ? 'background:#fafbfc' : ''}"><div style="${inValAccent}">${r.bahan || '-'}</div></td></tr>`).join('')}
+    </table>` : `<table style="width:100%;border-collapse:collapse"><tr><td style="${hdr}"><div style="${inHdr}">Bahan</div></td></tr><tr><td style="${B}padding:14px;text-align:center;color:#94a3b8;font-size:11px">Tidak ada data bahan</td></tr></table>`}
   </td>
-  <td style="vertical-align:top;width:35%;padding:0">
-    <table style="width:100%;border-collapse:collapse;font-size:10px">
-      <tr><td style="${hdr}">APPROVAL ADMIN / DATA</td></tr>
-      <tr><td style="${B}padding:1px 10px 11px;font-size:10px">${spec.approval_admin || '-'}</td></tr>
+  <td style="vertical-align:top;width:33%;padding:0">
+    <table style="width:100%;border-collapse:collapse">
+      <tr><td style="${hdr}"><div style="${inHdr}">Approval Admin / Data</div></td></tr>
+      <tr><td style="${B}padding:10px 12px;font-size:11px;min-height:80px;vertical-align:top;line-height:1.4">${spec.approval_admin || '-'}</td></tr>
     </table>
   </td>
-  <td style="vertical-align:top;width:35%;padding:0">
-    <table style="width:100%;border-collapse:collapse;font-size:10px">
-      <tr><td style="${hdr}">EXPORT & ICC</td></tr>
-      <tr><td style="${B}padding:1px 10px 11px;font-size:10px">${spec.export_icc || '-'}</td></tr>
+  <td style="vertical-align:top;width:33%;padding:0">
+    <table style="width:100%;border-collapse:collapse">
+      <tr><td style="${hdr}"><div style="${inHdr}">Export &amp; ICC</div></td></tr>
+      <tr><td style="${B}padding:10px 12px;font-size:11px;min-height:80px;vertical-align:top;line-height:1.4">${spec.export_icc || '-'}</td></tr>
     </table>
   </td>
 </tr></table>
+
+<!-- footer note -->
+<div style="margin-top:18px;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#94a3b8">
+  <div>Ayres Apparel &middot; Lembar Spesifikasi Produksi</div>
+  <div>Dicetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+</div>
 </div>`;
   }
 
@@ -410,19 +430,19 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
       const iframe = document.createElement('iframe');
-      iframe.style.cssText = 'position:fixed;left:-9999px;width:1200px;border:none';
+      iframe.style.cssText = 'position:fixed;left:-9999px;width:1400px;border:none';
       document.body.appendChild(iframe);
       const doc = iframe.contentDocument!;
       doc.open();
       doc.write(`<html><head><style>*{box-sizing:border-box;margin:0;padding:0;text-decoration:none!important;font-style:normal!important}body{background:#fff}</style></head><body>${buildSpecHtml(spec)}</body></html>`);
       doc.close();
       await new Promise(r => setTimeout(r, 1200));
-      const canvas = await html2canvas(doc.body, { scale: 3, useCORS: true, backgroundColor: '#ffffff', windowWidth: 1200 });
+      const canvas = await html2canvas(doc.body, { scale: 3, useCORS: true, backgroundColor: '#ffffff', windowWidth: 1400 });
       document.body.removeChild(iframe);
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pageW = 210;
-      const pageH = 297;
+      const pdf = new jsPDF('l', 'mm', 'a4');
+      const pageW = 297;
+      const pageH = 210;
       const margin = 5;
       const contentW = pageW - margin * 2;
       const imgRatio = canvas.height / canvas.width;
@@ -1003,11 +1023,15 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
 
 /* ═══ Tab WO 2 — Form Permintaan Gudang ═══ */
 function TabWO2({ wo, gudangItems, specs: propSpecs, specBahan: propSpecBahan }: { wo: Row; gudangItems: Row[]; specs: Row[]; specBahan: Row[] }) {
-  const [extraAks, setExtraAks] = useState<{ id: number }[]>([]);
-  const [extraMat, setExtraMat] = useState<{ id: number }[]>([{ id: 1 }]);
+  type ExtraRow = { id: number; bagian: string; bahan: string; warna: string; kuantitas: number };
+  const [extraAks, setExtraAks] = useState<ExtraRow[]>([]);
+  const [extraMat, setExtraMat] = useState<ExtraRow[]>([{ id: 1, bagian: '', bahan: '', warna: '', kuantitas: 0 }]);
+  const [autoInputs, setAutoInputs] = useState<Record<string, { warna: string; kuantitas: number }>>({});
   const [liveSpecs, setLiveSpecs] = useState(propSpecs);
   const [liveSpecBahan, setLiveSpecBahan] = useState(propSpecBahan);
+  const [liveGudang, setLiveGudang] = useState<Row[]>(gudangItems);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const toast = useToast();
   const delIcon = <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>;
 
@@ -1016,45 +1040,134 @@ function TabWO2({ wo, gudangItems, specs: propSpecs, specBahan: propSpecBahan }:
     (async () => {
       setLoading(true);
       try {
-        const [s, sb] = await Promise.all([dbGet('wo_spesifikasi'), dbGet('wo_spesifikasi_bahan')]);
+        const [s, sb, g] = await Promise.all([dbGet('wo_spesifikasi'), dbGet('wo_spesifikasi_bahan'), dbGet('wo_permintaan_gudang')]);
         setLiveSpecs(s.filter((r: Row) => String(r.work_order_id) === String(wo.id)));
         setLiveSpecBahan(sb);
+        setLiveGudang(g.filter((r: Row) => String(r.work_order_id) === String(wo.id)));
       } catch {}
       setLoading(false);
     })();
   }, [wo.id]);
 
   // Auto-generate from WO1 specs
-  const bahanUtama: { bagian: string; bahan: string }[] = [];
-  const aksesorisRows: { bagian: string; bahan: string }[] = [];
-  for (const spec of liveSpecs) {
-    const rows = liveSpecBahan.filter((b: Row) => String(b.spesifikasi_id) === String(spec.id));
-    for (const r of rows) bahanUtama.push({ bagian: r.bagian, bahan: r.bahan || '-' });
-    if (spec.tagline) aksesorisRows.push({ bagian: 'Tagline', bahan: spec.tagline });
-    if (spec.authentic) aksesorisRows.push({ bagian: 'Keaslian', bahan: spec.authentic });
-    if (spec.info_ukuran) aksesorisRows.push({ bagian: 'Info Ukuran', bahan: spec.info_ukuran });
-    if (spec.info_logo) aksesorisRows.push({ bagian: 'Info Logo', bahan: spec.info_logo });
-    if (spec.info_packing) aksesorisRows.push({ bagian: 'Info Packing', bahan: spec.info_packing });
-    if (spec.webbing) aksesorisRows.push({ bagian: 'Webbing', bahan: spec.webbing });
-    if (spec.font_nomor) aksesorisRows.push({ bagian: 'Font & Nomor', bahan: spec.font_nomor });
-  }
+  const { bahanUtama, aksesorisRows } = useMemo(() => {
+    const bu: { bagian: string; bahan: string }[] = [];
+    const ak: { bagian: string; bahan: string }[] = [];
+    for (const spec of liveSpecs) {
+      const rows = liveSpecBahan.filter((b: Row) => String(b.spesifikasi_id) === String(spec.id));
+      for (const r of rows) bu.push({ bagian: r.bagian, bahan: r.bahan || '-' });
+      if (spec.tagline) ak.push({ bagian: 'Tagline', bahan: spec.tagline });
+      if (spec.authentic) ak.push({ bagian: 'Keaslian', bahan: spec.authentic });
+      if (spec.info_ukuran) ak.push({ bagian: 'Info Ukuran', bahan: spec.info_ukuran });
+      if (spec.info_logo) ak.push({ bagian: 'Info Logo', bahan: spec.info_logo });
+      if (spec.info_packing) ak.push({ bagian: 'Info Packing', bahan: spec.info_packing });
+      if (spec.webbing) ak.push({ bagian: 'Webbing', bahan: spec.webbing });
+      if (spec.font_nomor) ak.push({ bagian: 'Font & Nomor', bahan: spec.font_nomor });
+    }
+    return { bahanUtama: bu, aksesorisRows: ak };
+  }, [liveSpecs, liveSpecBahan]);
   const totalAuto = bahanUtama.length + aksesorisRows.length;
   const hasData = liveSpecs.length > 0;
 
-  // Also include saved gudang items that were manually added
-  const savedGudang = gudangItems.filter((r: Row) => r.kategori === 'MATERIAL_TAMBAHAN');
+  // Hydrate state from saved gudang data whenever liveGudang or auto rows change
+  useEffect(() => {
+    const initAuto: Record<string, { warna: string; kuantitas: number }> = {};
+    const buItems = liveGudang.filter((r: Row) => r.kategori === 'BAHAN_UTAMA');
+    bahanUtama.forEach((r, i) => {
+      const match = buItems.find((g: Row) => g.bagian === r.bagian && g.bahan === r.bahan);
+      if (match) initAuto[`bu-${i}`] = { warna: match.warna || '', kuantitas: Number(match.kuantitas) || 0 };
+    });
+    const akItems = liveGudang.filter((r: Row) => r.kategori === 'AKSESORIS');
+    aksesorisRows.forEach((r, i) => {
+      const match = akItems.find((g: Row) => g.bagian === r.bagian && g.bahan === r.bahan);
+      if (match) initAuto[`ak-${i}`] = { warna: match.warna || '', kuantitas: Number(match.kuantitas) || 0 };
+    });
+    setAutoInputs(initAuto);
+
+    const matchedAk = new Set(aksesorisRows.map(r => `${r.bagian}|${r.bahan}`));
+    const extraAkItems = akItems.filter((g: Row) => !matchedAk.has(`${g.bagian}|${g.bahan}`));
+    setExtraAks(extraAkItems.map((r: Row, i: number) => ({
+      id: Date.now() + i,
+      bagian: r.bagian || '', bahan: r.bahan || '',
+      warna: r.warna || '', kuantitas: Number(r.kuantitas) || 0,
+    })));
+
+    const mtItems = liveGudang.filter((r: Row) => r.kategori === 'MATERIAL_TAMBAHAN');
+    if (mtItems.length > 0) {
+      setExtraMat(mtItems.map((r: Row, i: number) => ({
+        id: Date.now() + 1000 + i,
+        bagian: r.bagian || '', bahan: r.bahan || '',
+        warna: r.warna || '', kuantitas: Number(r.kuantitas) || 0,
+      })));
+    }
+  }, [liveGudang, bahanUtama, aksesorisRows]);
+
+  const setAutoField = (key: string, field: 'warna' | 'kuantitas', value: string | number) => {
+    setAutoInputs(prev => ({
+      ...prev,
+      [key]: { ...(prev[key] || { warna: '', kuantitas: 0 }), [field]: value },
+    }));
+  };
+  const updateExtraAks = (id: number, field: keyof ExtraRow, value: string | number) => {
+    setExtraAks(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+  };
+  const updateExtraMat = (id: number, field: keyof ExtraRow, value: string | number) => {
+    setExtraMat(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+  };
 
   async function handleSimpan() {
+    setSaving(true);
     try {
+      const existing = await dbGet('wo_permintaan_gudang');
+      const old = existing.filter((r: Row) => String(r.work_order_id) === String(wo.id));
+      for (const o of old) await dbDelete('wo_permintaan_gudang', Number(o.id));
+
+      let urutan = 1;
+      for (let i = 0; i < bahanUtama.length; i++) {
+        const r = bahanUtama[i];
+        const inp = autoInputs[`bu-${i}`] || { warna: '', kuantitas: 0 };
+        await dbCreate('wo_permintaan_gudang', {
+          work_order_id: wo.id, kategori: 'BAHAN_UTAMA', urutan: urutan++,
+          bagian: r.bagian, bahan: r.bahan, warna: inp.warna, kuantitas: Number(inp.kuantitas) || 0,
+        });
+      }
+      for (let i = 0; i < aksesorisRows.length; i++) {
+        const r = aksesorisRows[i];
+        const inp = autoInputs[`ak-${i}`] || { warna: '', kuantitas: 0 };
+        await dbCreate('wo_permintaan_gudang', {
+          work_order_id: wo.id, kategori: 'AKSESORIS', urutan: urutan++,
+          bagian: r.bagian, bahan: r.bahan, warna: inp.warna, kuantitas: Number(inp.kuantitas) || 0,
+        });
+      }
+      for (const r of extraAks) {
+        if (r.bagian.trim() || r.bahan.trim()) {
+          await dbCreate('wo_permintaan_gudang', {
+            work_order_id: wo.id, kategori: 'AKSESORIS', urutan: urutan++,
+            bagian: r.bagian, bahan: r.bahan, warna: r.warna, kuantitas: Number(r.kuantitas) || 0,
+          });
+        }
+      }
+      for (const r of extraMat) {
+        if (r.bagian.trim() || r.bahan.trim()) {
+          await dbCreate('wo_permintaan_gudang', {
+            work_order_id: wo.id, kategori: 'MATERIAL_TAMBAHAN', urutan: urutan++,
+            bagian: r.bagian, bahan: r.bahan, warna: r.warna, kuantitas: Number(r.kuantitas) || 0,
+          });
+        }
+      }
+
+      const refreshed = await dbGet('wo_permintaan_gudang');
+      setLiveGudang(refreshed.filter((r: Row) => String(r.work_order_id) === String(wo.id)));
       toast.success('Disimpan', 'Data permintaan gudang berhasil disimpan.');
     } catch (e) { toast.error('Gagal', String(e)); }
+    setSaving(false);
   }
 
   async function handleDownloadPdfWO2() {
     try {
       const { jsPDF } = await import('jspdf');
       const { default: autoTable } = await import('jspdf-autotable');
-      const pdf = new jsPDF();
+      const pdf = new jsPDF('l', 'mm', 'a4');
       pdf.setFontSize(14);
       pdf.text(`FORM PERMINTAAN GUDANG - ${wo.customer?.toUpperCase()}`, 14, 18);
       pdf.setFontSize(10);
@@ -1063,14 +1176,25 @@ function TabWO2({ wo, gudangItems, specs: propSpecs, specBahan: propSpecBahan }:
       const allRows: string[][] = [];
       let no = 1;
       // Bahan utama
-      for (const r of bahanUtama) {
-        allRows.push([String(no++), r.bagian, r.bahan, '', '0']);
+      for (let i = 0; i < bahanUtama.length; i++) {
+        const r = bahanUtama[i];
+        const inp = autoInputs[`bu-${i}`] || { warna: '', kuantitas: 0 };
+        allRows.push([String(no++), r.bagian, r.bahan, inp.warna || '', String(inp.kuantitas || 0)]);
       }
       // Aksesoris
-      if (aksesorisRows.length > 0) {
+      const allAks = [...aksesorisRows.map((r, i) => ({ ...r, ...(autoInputs[`ak-${i}`] || { warna: '', kuantitas: 0 }) })), ...extraAks];
+      if (allAks.length > 0) {
         allRows.push([{ content: 'AKSESORIS', colSpan: 5, styles: { halign: 'center', fontStyle: 'bold', fillColor: [240, 240, 240] } } as unknown as string]);
-        for (const r of aksesorisRows) {
-          allRows.push([String(no++), r.bagian, r.bahan, '', '0']);
+        for (const r of allAks) {
+          allRows.push([String(no++), r.bagian, r.bahan, r.warna || '', String(r.kuantitas || 0)]);
+        }
+      }
+      // Material Tambahan
+      const filledMat = extraMat.filter(r => r.bagian.trim() || r.bahan.trim());
+      if (filledMat.length > 0) {
+        allRows.push([{ content: 'MATERIAL TAMBAHAN', colSpan: 5, styles: { halign: 'center', fontStyle: 'bold', fillColor: [240, 240, 240] } } as unknown as string]);
+        for (const r of filledMat) {
+          allRows.push([String(no++), r.bagian, r.bahan, r.warna || '', String(r.kuantitas || 0)]);
         }
       }
 
@@ -1117,8 +1241,8 @@ function TabWO2({ wo, gudangItems, specs: propSpecs, specBahan: propSpecBahan }:
                   <td className="px-5 py-3.5 text-sm text-blue-400">{i + 1}</td>
                   <td className="px-5 py-3.5 text-sm font-medium text-emerald-400">{r.bagian}</td>
                   <td className="px-5 py-3.5 text-sm font-medium text-white">{r.bahan}</td>
-                  <td className="px-5 py-3.5"><input type="text" placeholder="Warna..." className="bg-transparent text-sm text-slate-500 placeholder-slate-600 focus:outline-none w-full" /></td>
-                  <td className="px-5 py-3.5"><input type="number" defaultValue={0} className="bg-transparent text-sm text-slate-400 focus:outline-none w-16" /></td>
+                  <td className="px-5 py-3.5"><input type="text" value={autoInputs[`bu-${i}`]?.warna ?? ''} onChange={e => setAutoField(`bu-${i}`, 'warna', e.target.value)} placeholder="Warna..." className="bg-transparent text-sm text-slate-300 placeholder-slate-600 focus:outline-none w-full" /></td>
+                  <td className="px-5 py-3.5"><input type="number" value={autoInputs[`bu-${i}`]?.kuantitas ?? 0} onChange={e => setAutoField(`bu-${i}`, 'kuantitas', Number(e.target.value) || 0)} className="bg-transparent text-sm text-slate-300 focus:outline-none w-16" /></td>
                   <td className="px-5 py-3.5" />
                 </tr>
               ))}
@@ -1127,7 +1251,7 @@ function TabWO2({ wo, gudangItems, specs: propSpecs, specBahan: propSpecBahan }:
               {hasData && (
                 <tr><td colSpan={6} className="px-5 py-3 text-center border-b border-white/[0.06]">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2">AKSESORIS</span>
-                  <button onClick={() => setExtraAks(prev => [...prev, { id: Date.now() }])}
+                  <button onClick={() => setExtraAks(prev => [...prev, { id: Date.now(), bagian: '', bahan: '', warna: '', kuantitas: 0 }])}
                     className="text-xs text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded hover:bg-blue-500/10 transition-colors">+ Tambah</button>
                 </td></tr>
               )}
@@ -1138,8 +1262,8 @@ function TabWO2({ wo, gudangItems, specs: propSpecs, specBahan: propSpecBahan }:
                   <td className="px-5 py-3.5 text-sm text-blue-400">{bahanUtama.length + i + 1}</td>
                   <td className="px-5 py-3.5 text-sm font-medium text-emerald-400">{r.bagian}</td>
                   <td className="px-5 py-3.5 text-sm font-medium text-white">{r.bahan}</td>
-                  <td className="px-5 py-3.5"><input type="text" placeholder="Warna..." className="bg-transparent text-sm text-slate-500 placeholder-slate-600 focus:outline-none w-full" /></td>
-                  <td className="px-5 py-3.5"><input type="number" defaultValue={0} className="bg-transparent text-sm text-slate-400 focus:outline-none w-16" /></td>
+                  <td className="px-5 py-3.5"><input type="text" value={autoInputs[`ak-${i}`]?.warna ?? ''} onChange={e => setAutoField(`ak-${i}`, 'warna', e.target.value)} placeholder="Warna..." className="bg-transparent text-sm text-slate-300 placeholder-slate-600 focus:outline-none w-full" /></td>
+                  <td className="px-5 py-3.5"><input type="number" value={autoInputs[`ak-${i}`]?.kuantitas ?? 0} onChange={e => setAutoField(`ak-${i}`, 'kuantitas', Number(e.target.value) || 0)} className="bg-transparent text-sm text-slate-300 focus:outline-none w-16" /></td>
                   <td className="px-5 py-3.5" />
                 </tr>
               ))}
@@ -1151,10 +1275,10 @@ function TabWO2({ wo, gudangItems, specs: propSpecs, specBahan: propSpecBahan }:
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 mr-1.5" />
                     {bahanUtama.length + aksesorisRows.length + i + 1}
                   </td>
-                  <td className="px-5 py-2.5"><input type="text" placeholder="Nama bagian..." className="bg-transparent text-sm text-slate-400 placeholder-slate-600 focus:outline-none w-full" /></td>
-                  <td className="px-5 py-2.5"><input type="text" placeholder="Nama bahan..." className="bg-transparent text-sm text-slate-400 placeholder-slate-600 focus:outline-none w-full" /></td>
-                  <td className="px-5 py-2.5"><input type="text" placeholder="Warna..." className="bg-transparent text-sm text-slate-500 placeholder-slate-600 focus:outline-none w-full" /></td>
-                  <td className="px-5 py-2.5"><input type="number" defaultValue={0} className="bg-transparent text-sm text-slate-400 focus:outline-none w-16" /></td>
+                  <td className="px-5 py-2.5"><input type="text" value={row.bagian} onChange={e => updateExtraAks(row.id, 'bagian', e.target.value)} placeholder="Nama bagian..." className="bg-transparent text-sm text-slate-300 placeholder-slate-600 focus:outline-none w-full" /></td>
+                  <td className="px-5 py-2.5"><input type="text" value={row.bahan} onChange={e => updateExtraAks(row.id, 'bahan', e.target.value)} placeholder="Nama bahan..." className="bg-transparent text-sm text-slate-300 placeholder-slate-600 focus:outline-none w-full" /></td>
+                  <td className="px-5 py-2.5"><input type="text" value={row.warna} onChange={e => updateExtraAks(row.id, 'warna', e.target.value)} placeholder="Warna..." className="bg-transparent text-sm text-slate-300 placeholder-slate-600 focus:outline-none w-full" /></td>
+                  <td className="px-5 py-2.5"><input type="number" value={row.kuantitas} onChange={e => updateExtraAks(row.id, 'kuantitas', Number(e.target.value) || 0)} className="bg-transparent text-sm text-slate-300 focus:outline-none w-16" /></td>
                   <td className="px-5 py-2.5">
                     <button onClick={() => setExtraAks(prev => prev.filter(r => r.id !== row.id))} className="text-slate-600 hover:text-red-400 transition-colors">{delIcon}</button>
                   </td>
@@ -1164,33 +1288,21 @@ function TabWO2({ wo, gudangItems, specs: propSpecs, specBahan: propSpecBahan }:
               {/* Material Tambahan separator */}
               <tr><td colSpan={6} className="px-5 py-3 text-center border-b border-white/[0.06]">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2">MATERIAL TAMBAHAN</span>
-                <button onClick={() => setExtraMat(prev => [...prev, { id: Date.now() }])}
+                <button onClick={() => setExtraMat(prev => [...prev, { id: Date.now(), bagian: '', bahan: '', warna: '', kuantitas: 0 }])}
                   className="text-xs text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded hover:bg-blue-500/10 transition-colors">+ Tambah</button>
               </td></tr>
-
-              {/* Saved material tambahan */}
-              {savedGudang.map((r, i) => (
-                <tr key={`sg-${i}`} className="border-b border-white/[0.04]">
-                  <td className="px-5 py-3.5 text-sm text-blue-400">{totalAuto + extraAks.length + i + 1}</td>
-                  <td className="px-5 py-3.5 text-sm font-medium text-emerald-400">{r.bagian}</td>
-                  <td className="px-5 py-3.5 text-sm font-medium text-white">{r.bahan}</td>
-                  <td className="px-5 py-3.5"><input type="text" defaultValue={r.warna || ''} placeholder="Warna..." className="bg-transparent text-sm text-slate-500 placeholder-slate-600 focus:outline-none w-full" /></td>
-                  <td className="px-5 py-3.5"><input type="number" defaultValue={r.kuantitas || 0} className="bg-transparent text-sm text-slate-400 focus:outline-none w-16" /></td>
-                  <td className="px-5 py-3.5" />
-                </tr>
-              ))}
 
               {/* Material tambahan rows (editable) */}
               {extraMat.map((row, i) => (
                 <tr key={`em-${row.id}`} className="border-b border-white/[0.04] bg-white/[0.01]">
                   <td className="px-5 py-2.5 text-sm text-blue-400 align-middle">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 mr-1.5" />
-                    {totalAuto + extraAks.length + savedGudang.length + i + 1}
+                    {totalAuto + extraAks.length + i + 1}
                   </td>
-                  <td className="px-5 py-2.5"><input type="text" placeholder="Nama bagian..." className="bg-transparent text-sm text-slate-400 placeholder-slate-600 focus:outline-none w-full" /></td>
-                  <td className="px-5 py-2.5"><input type="text" placeholder="Nama bahan..." className="bg-transparent text-sm text-slate-400 placeholder-slate-600 focus:outline-none w-full" /></td>
-                  <td className="px-5 py-2.5"><input type="text" placeholder="Warna..." className="bg-transparent text-sm text-slate-500 placeholder-slate-600 focus:outline-none w-full" /></td>
-                  <td className="px-5 py-2.5"><input type="number" defaultValue={0} className="bg-transparent text-sm text-slate-400 focus:outline-none w-16" /></td>
+                  <td className="px-5 py-2.5"><input type="text" value={row.bagian} onChange={e => updateExtraMat(row.id, 'bagian', e.target.value)} placeholder="Nama bagian..." className="bg-transparent text-sm text-slate-300 placeholder-slate-600 focus:outline-none w-full" /></td>
+                  <td className="px-5 py-2.5"><input type="text" value={row.bahan} onChange={e => updateExtraMat(row.id, 'bahan', e.target.value)} placeholder="Nama bahan..." className="bg-transparent text-sm text-slate-300 placeholder-slate-600 focus:outline-none w-full" /></td>
+                  <td className="px-5 py-2.5"><input type="text" value={row.warna} onChange={e => updateExtraMat(row.id, 'warna', e.target.value)} placeholder="Warna..." className="bg-transparent text-sm text-slate-300 placeholder-slate-600 focus:outline-none w-full" /></td>
+                  <td className="px-5 py-2.5"><input type="number" value={row.kuantitas} onChange={e => updateExtraMat(row.id, 'kuantitas', Number(e.target.value) || 0)} className="bg-transparent text-sm text-slate-300 focus:outline-none w-16" /></td>
                   <td className="px-5 py-2.5">
                     <button onClick={() => setExtraMat(prev => prev.filter(r => r.id !== row.id))} className="text-slate-600 hover:text-red-400 transition-colors">{delIcon}</button>
                   </td>
@@ -1200,9 +1312,9 @@ function TabWO2({ wo, gudangItems, specs: propSpecs, specBahan: propSpecBahan }:
           </table>
         </div>
         <div className="px-5 py-4">
-          <button onClick={handleSimpan} className="flex items-center gap-2 bg-blue-600/10 border border-blue-500/20 text-blue-400 text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-600/20 transition-colors">
+          <button onClick={handleSimpan} disabled={saving} className="flex items-center gap-2 bg-blue-600/10 border border-blue-500/20 text-blue-400 text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-600/20 transition-colors disabled:opacity-50">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" /></svg>
-            Simpan
+            {saving ? 'Menyimpan...' : 'Simpan'}
           </button>
         </div>
       </div>
@@ -1511,7 +1623,7 @@ function TabWO4({ wo }: { wo: Row; detailItems: Row[] }) {
     try {
       const { jsPDF } = await import('jspdf');
       const { default: autoTable } = await import('jspdf-autotable');
-      const pdf = new jsPDF();
+      const pdf = new jsPDF('l', 'mm', 'a4');
       pdf.setFontSize(14);
       pdf.text(`FORM PENGIRIMAN ${wo.customer?.toUpperCase()} (${wo.paket})`, 14, 18);
       autoTable(pdf, {
