@@ -12,6 +12,35 @@ const PROD_STAGES = [
   'QC Panel','Potong Kain','QC Cutting','Jahit','QC Jersey','Finishing','Pengiriman',
 ];
 
+function compressImage(file: File, maxSize = 1600, quality = 0.8): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Gagal membaca file'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('File bukan gambar yang valid'));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxSize || height > maxSize) {
+          const ratio = Math.min(maxSize / width, maxSize / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Canvas context tidak tersedia'));
+        ctx.drawImage(img, 0, 0, width, height);
+        const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        resolve(canvas.toDataURL(mime, quality));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function fmtD(d: string) {
   if (!d) return '-';
   const m = String(d).match(/(\d{4})-(\d{2})-(\d{2})/);
@@ -149,7 +178,7 @@ export default function WorkOrderDetailPage() {
       {tab === 'detail' && <TabDetail wo={woData} />}
       {tab === 'wo1' && <TabWO1 wo={woData} specs={specs} specBahan={specBahan} />}
       {tab === 'wo2' && <TabWO2 wo={woData} gudangItems={gudangItems} specs={specs} specBahan={specBahan} />}
-      {tab === 'wo3' && <TabWO3 wo={woData} detailItems={detailItems} />}
+      {tab === 'wo3' && <TabWO3 wo={woData} detailItems={detailItems} specs={specs} specBahan={specBahan} />}
       {tab === 'wo4' && <TabWO4 wo={woData} detailItems={detailItems} />}
     </div>
   );
@@ -195,10 +224,10 @@ function TabDetail({ wo }: { wo: Row }) {
           </div>
         </div>
 
-        {/* Detail Bahan */}
+        {/* Bahan */}
         {detailBahan.length > 0 && (
           <div className="border-t border-white/[0.06] pt-4">
-            <p className="text-[11px] text-blue-400 font-medium uppercase tracking-wider mb-3">DETAIL BAHAN</p>
+            <p className="text-[11px] text-blue-400 font-medium uppercase tracking-wider mb-3">BAHAN</p>
             <div className="rounded-lg border border-white/[0.06] overflow-hidden">
               {detailBahan.map((d, idx) => (
                 <div key={d.id} className={`flex items-center ${idx !== 0 ? 'border-t border-white/[0.06]' : ''}`}>
@@ -297,27 +326,26 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
     const bRows = allSpecBahan.filter((b: Row) => String(b.spesifikasi_id) === String(spec.id));
     const stages = ['Approval Design','Approval Pattern',...PROD_STAGES];
     const acc = [['TAGLINE',spec.tagline],['AUTHENTIC',spec.authentic],['SIZE',spec.info_ukuran],['LOGO',spec.info_logo],['PACKING',spec.info_packing],['WEBBING',spec.webbing]];
-    const desainImg = spec.dokumen_desain ? `<img src="${spec.dokumen_desain}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : `<div style="height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:14px">Desain</div>`;
-    const patternImg = spec.dokumen_pattern ? `<img src="${spec.dokumen_pattern}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : `<div style="height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:14px">Pattern</div>`;
-    // Tokens
     const PRIMARY = '#0f172a';
     const ACCENT = '#dc2626';
     const BORDER = '#cbd5e1';
     const SOFT = '#f8fafc';
-    const B = `border:1px solid ${BORDER};`;
-    const ROW_H = 28;
-    const tdBase = `${B}padding:0;height:${ROW_H}px;`;
-    const hdr = `${tdBase}background:${PRIMARY};`;
-    const lbl = `${tdBase}background:${SOFT};`;
-    const val = `${tdBase}`;
-    const flexL = `display:flex;align-items:center;height:${ROW_H}px;padding:0 12px;font-size:11px;`;
-    const flexC = `display:flex;align-items:center;justify-content:center;height:${ROW_H}px;padding:0 12px;font-size:11px;`;
-    const inHdr = `${flexC}color:#fff;font-weight:700;letter-spacing:0.6px;text-transform:uppercase`;
-    const inLbl = `${flexL}font-weight:700;color:${PRIMARY}`;
-    const inVal = `${flexL}color:${PRIMARY}`;
-    const inValAccent = `${flexL}color:${ACCENT};font-weight:700`;
-    return `<div style="background:#fff;padding:30px 36px;font-family:Arial,Helvetica,sans-serif;color:${PRIMARY};width:1400px;line-height:1.4;-webkit-font-smoothing:antialiased">
-<!-- ═══ HEADER ═══ -->
+    const ROW_H = 30;
+
+    const desainImg = spec.dokumen_desain ? `<img src="${spec.dokumen_desain}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : `<div style="width:100%;height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:14px">Desain</div>`;
+    const patternImg = spec.dokumen_pattern ? `<img src="${spec.dokumen_pattern}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : `<div style="width:100%;height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:14px">Pattern</div>`;
+
+    // Cell helpers — flexbox vertical-center inside fixed-height div inside td (padding:0 on td)
+    const td = `border:1px solid ${BORDER};padding:0;height:${ROW_H}px;`;
+    const flexL = `display:flex;align-items:center;height:${ROW_H}px;padding:0 12px;line-height:1.2;`;
+    const flexC = `display:flex;align-items:center;justify-content:center;height:${ROW_H}px;padding:0 12px;line-height:1.2;`;
+    const HDR = (txt: string, extraTd = '') => `<td style="${td}background:${PRIMARY};${extraTd}"><div style="${flexC}color:#fff;font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase">${txt}</div></td>`;
+    const LBL = (txt: string, extraTd = '') => `<td style="${td}background:${SOFT};${extraTd}"><div style="${flexL}color:${PRIMARY};font-size:11px;font-weight:700">${txt}</div></td>`;
+    const VAL = (txt: string, extraTd = '', innerExtra = '') => `<td style="${td}${extraTd}"><div style="${flexL}color:${PRIMARY};font-size:11px;${innerExtra}">${txt}</div></td>`;
+    const VALc = (txt: string, extraTd = '', innerExtra = '') => `<td style="${td}${extraTd}"><div style="${flexC}color:${PRIMARY};font-size:11px;${innerExtra}">${txt}</div></td>`;
+
+    return `<div style="background:#fff;padding:30px 36px;font-family:Arial,Helvetica,sans-serif;color:${PRIMARY};width:1400px;-webkit-font-smoothing:antialiased">
+<!-- HEADER -->
 <table style="width:100%;border-collapse:collapse;margin-bottom:20px"><tr>
   <td style="vertical-align:bottom">
     <div style="display:flex;align-items:center;gap:12px">
@@ -332,7 +360,7 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
   </td>
 </tr></table>
 
-<!-- ═══ MAIN 2-COL ═══ -->
+<!-- MAIN 2-COL -->
 <table style="width:100%;border-collapse:separate;border-spacing:14px 0"><tr>
 
   <!-- LEFT 60% -->
@@ -343,27 +371,21 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
       <div style="flex:1;border:1px solid ${BORDER};overflow:hidden">${patternImg}</div>
     </div>
     <table style="width:100%;border-collapse:collapse;margin-top:10px">
-      <tr>
-        <td style="${hdr}width:50%"><div style="${inHdr}">Nama Customer</div></td>
-        <td style="${hdr}"><div style="${inHdr}">Nama Spesifikasi</div></td>
-      </tr>
-      <tr>
-        <td style="${val}"><div style="${flexC}font-weight:700;font-size:12px;color:${ACCENT}">${wo.customer}</div></td>
-        <td style="${val}"><div style="${flexC}font-weight:700;font-size:12px;color:${ACCENT}">${spec.nama_spesifikasi}</div></td>
-      </tr>
+      <tr>${HDR('Nama Customer', 'width:50%')}${HDR('Nama Spesifikasi')}</tr>
+      <tr>${VALc(wo.customer, '', `color:${ACCENT};font-weight:700;font-size:12px`)}${VALc(spec.nama_spesifikasi, '', `color:${ACCENT};font-weight:700;font-size:12px`)}</tr>
     </table>
     <!-- Keterangan Jahit + Font & Number -->
     <table style="width:100%;border-collapse:separate;border-spacing:10px 0;margin-top:10px"><tr>
       <td style="width:50%;vertical-align:top;padding:0">
-        <div style="${B}overflow:hidden">
-          <div style="height:${ROW_H}px;display:flex;align-items:center;justify-content:center;padding:0 12px;font-weight:700;color:${ACCENT};font-size:11px;letter-spacing:0.6px;border-bottom:1px solid ${BORDER};background:#fef2f2;text-transform:uppercase">Keterangan Jahit</div>
-          <div style="padding:10px 12px;font-size:11px;min-height:48px;line-height:1.4">${spec.keterangan_jahit || '-'}</div>
+        <div style="border:1px solid ${BORDER};overflow:hidden">
+          <div style="height:${ROW_H}px;display:flex;align-items:center;justify-content:center;color:${ACCENT};font-size:11px;font-weight:700;letter-spacing:0.6px;background:#fef2f2;border-bottom:1px solid ${BORDER};text-transform:uppercase">Keterangan Jahit</div>
+          <div style="min-height:60px;display:flex;align-items:center;padding:8px 12px;font-size:11px;line-height:1.4;color:${PRIMARY}">${spec.keterangan_jahit || '-'}</div>
         </div>
       </td>
       <td style="width:50%;vertical-align:top;padding:0">
-        <div style="${B}overflow:hidden">
-          <div style="background:${PRIMARY};color:#fff;font-weight:700;height:${ROW_H}px;display:flex;align-items:center;justify-content:center;padding:0 12px;font-size:11px;letter-spacing:0.6px;text-transform:uppercase">Font &amp; Number</div>
-          <div style="padding:10px 12px;font-size:11px;min-height:48px;line-height:1.4">${spec.font_nomor || '-'}</div>
+        <div style="border:1px solid ${BORDER};overflow:hidden">
+          <div style="height:${ROW_H}px;display:flex;align-items:center;justify-content:center;background:${PRIMARY};color:#fff;font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase">Font &amp; Number</div>
+          <div style="min-height:60px;display:flex;align-items:center;padding:8px 12px;font-size:11px;line-height:1.4;color:${PRIMARY}">${spec.font_nomor || '-'}</div>
         </div>
       </td>
     </tr></table>
@@ -372,19 +394,19 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
   <!-- RIGHT 40% -->
   <td style="width:40%;vertical-align:top;padding:0">
     <table style="width:100%;border-collapse:collapse;margin-bottom:10px">
-      <tr><td style="${lbl}width:32%"><div style="${inLbl}">NAMA</div></td><td style="${val}"><div style="${inValAccent}">${wo.customer}</div></td></tr>
-      <tr><td style="${lbl}"><div style="${inLbl}">PAKET</div></td><td style="${val}"><div style="${inValAccent}">${wo.paket}</div></td></tr>
-      <tr><td style="${lbl}"><div style="${inLbl}">JUMLAH</div></td><td style="${val}"><div style="${inValAccent}">${spec.jumlah || 0} PCS</div></td></tr>
+      <tr>${LBL('NAMA', 'width:32%')}${VAL(wo.customer, '', `color:${ACCENT};font-weight:700`)}</tr>
+      <tr>${LBL('PAKET')}${VAL(wo.paket, '', `color:${ACCENT};font-weight:700`)}</tr>
+      <tr>${LBL('JUMLAH')}${VAL(`${spec.jumlah || 0} PCS`, '', `color:${ACCENT};font-weight:700`)}</tr>
     </table>
     <table style="width:100%;border-collapse:collapse;margin-bottom:10px">
-      <tr><td colspan="2" style="${hdr}"><div style="${inHdr}">Accessories</div></td></tr>
-      ${acc.map(([k,v], i) => `<tr><td style="${lbl}width:34%;${i % 2 === 1 ? 'background:#eef2f7' : ''}"><div style="${inLbl}">${k}</div></td><td style="${val}${i % 2 === 1 ? 'background:#fafbfc' : ''}"><div style="${inVal}">${v || '-'}</div></td></tr>`).join('')}
+      <tr><td colspan="2" style="${td}background:${PRIMARY}"><div style="${flexC}color:#fff;font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase">Accessories</div></td></tr>
+      ${acc.map(([k,v], i) => `<tr>${LBL(k as string, `width:34%;${i % 2 === 1 ? 'background:#eef2f7' : ''}`)}${VAL((v as string) || '-', i % 2 === 1 ? 'background:#fafbfc' : '')}</tr>`).join('')}
     </table>
     <table style="width:100%;border-collapse:collapse">
-      <tr><td style="${hdr}"><div style="${inHdr}">Penanggung Jawab</div></td></tr>
-      <tr><td style="${B}padding:6px 10px">
+      <tr>${HDR('Penanggung Jawab')}</tr>
+      <tr><td style="border:1px solid ${BORDER};padding:8px 10px">
         <table style="width:100%;border-collapse:collapse">
-          ${stages.map((s, i) => `<tr><td style="padding:4px 2px;font-size:10.5px;color:#1e3a8a;font-weight:500;${i < stages.length - 1 ? `border-bottom:1px dashed ${BORDER};` : ''}"><span style="display:inline-block;width:24px;color:#94a3b8;font-weight:700">${String(i+1).padStart(2,'0')}</span>${s}</td></tr>`).join('')}
+          ${stages.map((s, i) => `<tr><td style="padding:5px 2px;font-size:10.5px;color:#1e3a8a;font-weight:500;${i < stages.length - 1 ? `border-bottom:1px dashed ${BORDER};` : ''}line-height:1.2"><span style="display:inline-block;width:24px;color:#94a3b8;font-weight:700">${String(i+1).padStart(2,'0')}</span>${s}</td></tr>`).join('')}
         </table>
       </td></tr>
     </table>
@@ -393,24 +415,24 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
 </tr></table>
 
 
-<!-- ═══ FOOTER ═══ -->
+<!-- FOOTER -->
 <table style="width:100%;border-collapse:separate;border-spacing:14px 0;margin-top:16px"><tr>
   <td style="vertical-align:top;width:34%;padding:0">
     ${bRows.length > 0 ? `<table style="width:100%;border-collapse:collapse">
-      <tr><td colspan="2" style="${hdr}"><div style="${inHdr}">Bahan</div></td></tr>
-      ${bRows.map((r: Row, i: number) => `<tr><td style="${lbl}width:50%;${i % 2 === 1 ? 'background:#eef2f7' : ''}"><div style="${inLbl}">${r.bagian}</div></td><td style="${val}${i % 2 === 1 ? 'background:#fafbfc' : ''}"><div style="${inValAccent}">${r.bahan || '-'}</div></td></tr>`).join('')}
-    </table>` : `<table style="width:100%;border-collapse:collapse"><tr><td style="${hdr}"><div style="${inHdr}">Bahan</div></td></tr><tr><td style="${B}padding:14px;text-align:center;color:#94a3b8;font-size:11px">Tidak ada data bahan</td></tr></table>`}
+      <tr><td colspan="2" style="${td}background:${PRIMARY}"><div style="${flexC}color:#fff;font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase">Bahan</div></td></tr>
+      ${bRows.map((r: Row, i: number) => `<tr>${LBL(r.bagian, `width:50%;${i % 2 === 1 ? 'background:#eef2f7' : ''}`)}${VAL(r.bahan || '-', i % 2 === 1 ? 'background:#fafbfc' : '', `color:${ACCENT};font-weight:700`)}</tr>`).join('')}
+    </table>` : `<table style="width:100%;border-collapse:collapse"><tr>${HDR('Bahan')}</tr><tr><td style="border:1px solid ${BORDER};padding:14px;text-align:center;color:#94a3b8;font-size:11px">Tidak ada data bahan</td></tr></table>`}
   </td>
   <td style="vertical-align:top;width:33%;padding:0">
     <table style="width:100%;border-collapse:collapse">
-      <tr><td style="${hdr}"><div style="${inHdr}">Approval Admin / Data</div></td></tr>
-      <tr><td style="${B}padding:10px 12px;font-size:11px;min-height:80px;vertical-align:top;line-height:1.4">${spec.approval_admin || '-'}</td></tr>
+      <tr>${HDR('Approval Admin / Data')}</tr>
+      <tr><td style="border:1px solid ${BORDER};padding:0"><div style="min-height:90px;display:flex;align-items:center;padding:10px 12px;font-size:11px;line-height:1.4;color:${PRIMARY}">${spec.approval_admin || '-'}</div></td></tr>
     </table>
   </td>
   <td style="vertical-align:top;width:33%;padding:0">
     <table style="width:100%;border-collapse:collapse">
-      <tr><td style="${hdr}"><div style="${inHdr}">Export &amp; ICC</div></td></tr>
-      <tr><td style="${B}padding:10px 12px;font-size:11px;min-height:80px;vertical-align:top;line-height:1.4">${spec.export_icc || '-'}</td></tr>
+      <tr>${HDR('Export & ICC')}</tr>
+      <tr><td style="border:1px solid ${BORDER};padding:0"><div style="min-height:90px;display:flex;align-items:center;padding:10px 12px;font-size:11px;line-height:1.4;color:${PRIMARY}">${spec.export_icc || '-'}</div></td></tr>
     </table>
   </td>
 </tr></table>
@@ -499,7 +521,7 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
       setApprovalAdmin(fresh.approval_admin || '');
       setDokDesain(fresh.dokumen_desain || null);
       setDokPattern(fresh.dokumen_pattern || null);
-      setBahanRows(rows.length > 0 ? rows.map((b: Row) => ({ id: b.id, bagian: b.bagian, bahan: b.bahan })) : [{ id: 1, bagian: 'FRONT BODY', bahan: '' }]);
+      setBahanRows(rows.length > 0 ? rows.map((b: Row) => ({ id: b.id, bagian: b.bagian, bahan: b.bahan })) : [{ id: 1, bagian: '', bahan: '' }]);
       setEditOpen(true);
     } catch (e) { toast.error('Gagal memuat data', String(e)); }
   }
@@ -541,15 +563,7 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
     setInfoUkuran(''); setInfoLogo(''); setInfoPacking(''); setWebbing('');
     setFontNomor(''); setKeterangan(''); setKeteranganJahit(''); setApprovalAdmin('');
     setDokDesain(null); setDokPattern(null);
-    // Re-fetch detail bahan from order
-    if (wo.order_id) {
-      dbGet('order_detail_bahan').then(all => {
-        const rows = all.filter((d: Row) => String(d.order_id) === String(wo.order_id));
-        setBahanRows(rows.length > 0 ? rows.map((d: Row, i: number) => ({ id: i + 1, bagian: d.bagian, bahan: d.bahan })) : [{ id: 1, bagian: 'FRONT BODY', bahan: '' }]);
-      }).catch(() => setBahanRows([{ id: 1, bagian: 'FRONT BODY', bahan: '' }]));
-    } else {
-      setBahanRows([{ id: 1, bagian: 'FRONT BODY', bahan: '' }]);
-    }
+    setBahanRows([{ id: 1, bagian: '', bahan: '' }]);
   }
 
   // Form state
@@ -569,29 +583,15 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
   const [dokPattern, setDokPattern] = useState<string | null>(null);
   const [uploadingDesain, setUploadingDesain] = useState(false);
   const [uploadingPattern, setUploadingPattern] = useState(false);
-  const [bahanRows, setBahanRows] = useState([{ id: 1, bagian: 'FRONT BODY', bahan: '' }]);
-
-  // Auto-fill detail bahan from order when opening create form
-  useEffect(() => {
-    if (createOpen && wo.order_id) {
-      dbGet('order_detail_bahan').then(all => {
-        const rows = all.filter((d: Row) => String(d.order_id) === String(wo.order_id));
-        if (rows.length > 0) {
-          setBahanRows(rows.map((d: Row, i: number) => ({ id: i + 1, bagian: d.bagian, bahan: d.bahan })));
-        }
-      }).catch(() => {});
-    }
-  }, [createOpen, wo.order_id]);
+  const [bahanRows, setBahanRows] = useState([{ id: 1, bagian: '', bahan: '' }]);
+  const [barangList, setBarangList] = useState<Row[]>([]);
+  useEffect(() => { dbGet('barang').then(setBarangList).catch(() => {}); }, []);
 
   async function handleUpload(file: File, setUrl: (url: string) => void, setLoading: (b: boolean) => void) {
     setLoading(true);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (data.url) setUrl(data.url);
-      else toast.error('Upload Gagal', data.error || 'Unknown error');
+      const dataUrl = await compressImage(file, 1600, 0.8);
+      setUrl(dataUrl);
     } catch (e) { toast.error('Upload Gagal', String(e)); }
     setLoading(false);
   }
@@ -726,7 +726,7 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
                     <div><label className={lCls}>Authentic</label><select value={authentic} onChange={e => setAuthentic(e.target.value)} className={sCls}><option value="">Pilih...</option><option>Ayress rubber</option><option>Ayress woven</option><option>Custom</option><option>Tanpa authentic</option></select></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><label className={lCls}>Info Ukuran</label><select value={infoUkuran} onChange={e => setInfoUkuran(e.target.value)} className={sCls}><option value="">Pilih...</option><option>Ayres</option><option>polos</option><option>custom</option></select></div>
+                    <div><label className={lCls}>Info Ukuran</label><select value={infoUkuran} onChange={e => setInfoUkuran(e.target.value)} className={sCls}><option value="">Pilih...</option><option>Ayres</option><option>polos</option><option>custom</option><option>reseller</option></select></div>
                     <div><label className={lCls}>Info Logo</label><input value={infoLogo} onChange={e => setInfoLogo(e.target.value)} className={iCls} placeholder="PRINT" /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -750,7 +750,10 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
                   {bahanRows.map(r => (
                     <div key={r.id} className="grid grid-cols-2 gap-2">
                       <input className={iCls} placeholder="Nama bagian" value={r.bagian} onChange={e => setBahanRows(prev => prev.map(p => p.id === r.id ? { ...p, bagian: e.target.value } : p))} />
-                      <input className={iCls} placeholder="Pilih atau ketik nama bahan" value={r.bahan} onChange={e => setBahanRows(prev => prev.map(p => p.id === r.id ? { ...p, bahan: e.target.value } : p))} />
+                      <select className={sCls} value={r.bahan} onChange={e => setBahanRows(prev => prev.map(p => p.id === r.id ? { ...p, bahan: e.target.value } : p))}>
+                        <option value="">Pilih bahan...</option>
+                        {barangList.map(b => <option key={b.id} value={b.nama}>{b.nama}</option>)}
+                      </select>
                     </div>
                   ))}
                 </div>
@@ -826,7 +829,7 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
                     <div><label className={lCls}>Authentic</label><select value={authentic} onChange={e => setAuthentic(e.target.value)} className={sCls}><option value="">Pilih...</option><option>Ayress rubber</option><option>Ayress woven</option><option>Custom</option><option>Tanpa authentic</option></select></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><label className={lCls}>Info Ukuran</label><select value={infoUkuran} onChange={e => setInfoUkuran(e.target.value)} className={sCls}><option value="">Pilih...</option><option>Ayres</option><option>polos</option><option>custom</option></select></div>
+                    <div><label className={lCls}>Info Ukuran</label><select value={infoUkuran} onChange={e => setInfoUkuran(e.target.value)} className={sCls}><option value="">Pilih...</option><option>Ayres</option><option>polos</option><option>custom</option><option>reseller</option></select></div>
                     <div><label className={lCls}>Info Logo</label><input value={infoLogo} onChange={e => setInfoLogo(e.target.value)} className={iCls} placeholder="PRINT" /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -847,7 +850,10 @@ function TabWO1({ wo, specs: initialSpecs, specBahan: initialSpecBahan }: { wo: 
                   {bahanRows.map(r => (
                     <div key={r.id} className="flex gap-2 items-center">
                       <input className={`${iCls} flex-1`} placeholder="Nama bagian" value={r.bagian} onChange={e => setBahanRows(prev => prev.map(p => p.id === r.id ? { ...p, bagian: e.target.value } : p))} />
-                      <input className={`${iCls} flex-1`} placeholder="Nama bahan" value={r.bahan} onChange={e => setBahanRows(prev => prev.map(p => p.id === r.id ? { ...p, bahan: e.target.value } : p))} />
+                      <select className={`${sCls} flex-1`} value={r.bahan} onChange={e => setBahanRows(prev => prev.map(p => p.id === r.id ? { ...p, bahan: e.target.value } : p))}>
+                        <option value="">Pilih bahan...</option>
+                        {barangList.map(b => <option key={b.id} value={b.nama}>{b.nama}</option>)}
+                      </select>
                       <button onClick={() => setBahanRows(prev => prev.filter(p => p.id !== r.id))} className="text-slate-500 hover:text-red-400 transition-colors shrink-0 p-1">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
                       </button>
@@ -1323,12 +1329,33 @@ function TabWO2({ wo, gudangItems, specs: propSpecs, specBahan: propSpecBahan }:
 }
 
 /* ═══ Tab WO 3 — Detail Order Items ═══ */
-function TabWO3({ wo, detailItems: initialItems }: { wo: Row; detailItems: Row[] }) {
+function TabWO3({ wo, detailItems: initialItems, specs, specBahan }: { wo: Row; detailItems: Row[]; specs: Row[]; specBahan: Row[] }) {
   type ItemRow = { id: number; nama: string; np: string; ukuran: string; keterangan: string; penjahit: string; isNew?: boolean };
   const [rows, setRows] = useState<ItemRow[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+
+  // Derive dynamic columns from WO1 spesifikasi bahan — one column per bagian
+  const bagianCols = (() => {
+    const specIds = new Set(specs.map(s => String(s.id)));
+    const rel = specBahan.filter(b => specIds.has(String(b.spesifikasi_id)));
+    const map = new Map<string, string[]>();
+    for (const b of rel) {
+      const bg = String(b.bagian || '').trim().toUpperCase();
+      const bh = String(b.bahan || '').trim();
+      if (!bg) continue;
+      if (!map.has(bg)) map.set(bg, []);
+      const arr = map.get(bg)!;
+      if (bh && !arr.includes(bh)) arr.push(bh);
+    }
+    const abbrev = (s: string) => s.split(/\s+/).map(w => w[0] || '').join('').toUpperCase();
+    return Array.from(map.entries()).map(([bagian, bahans]) => ({
+      bagian,
+      header: abbrev(bagian),
+      value: bahans.join(' / '),
+    }));
+  })();
 
   // Fetch fresh data from DB
   async function fetchItems() {
@@ -1395,32 +1422,17 @@ function TabWO3({ wo, detailItems: initialItems }: { wo: Row; detailItems: Row[]
   async function handleExportExcel() {
     try {
       const XLSX = await import('xlsx');
-      const header1 = ['NO', 'NAMA', 'NP', 'SIZE', 'KET', 'BD', 'BB', 'VAR SAMPING', '', 'LENGAN', '', 'KERAH', 'TAGLINE', 'LIS CELANA', 'PENJAHIT'];
-      const header2 = ['', '', '', '', '', '', '', 'BD', 'BB', 'KANAN', 'KIRI', '', '', '', ''];
+      const header = ['NO', 'NAMA', 'NP', 'SIZE', 'KET', ...bagianCols.map(c => c.header), 'PENJAHIT'];
       const data = rows.map((r, i) => [
         i + 1, r.nama, r.np, r.ukuran, r.keterangan,
-        '', '', '', '', '', '', '', '', '', r.penjahit,
+        ...bagianCols.map(() => ''),
+        r.penjahit,
       ]);
-      const ws = XLSX.utils.aoa_to_sheet([header1, header2, ...data]);
-      ws['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },  // NO
-        { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } },  // NAMA
-        { s: { r: 0, c: 2 }, e: { r: 1, c: 2 } },  // NP
-        { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } },  // SIZE
-        { s: { r: 0, c: 4 }, e: { r: 1, c: 4 } },  // KET
-        { s: { r: 0, c: 5 }, e: { r: 1, c: 5 } },  // BD
-        { s: { r: 0, c: 6 }, e: { r: 1, c: 6 } },  // BB
-        { s: { r: 0, c: 7 }, e: { r: 0, c: 8 } },  // VAR SAMPING
-        { s: { r: 0, c: 9 }, e: { r: 0, c: 10 } }, // LENGAN
-        { s: { r: 0, c: 11 }, e: { r: 1, c: 11 } }, // KERAH
-        { s: { r: 0, c: 12 }, e: { r: 1, c: 12 } }, // TAGLINE
-        { s: { r: 0, c: 13 }, e: { r: 1, c: 13 } }, // LIS CELANA
-        { s: { r: 0, c: 14 }, e: { r: 1, c: 14 } }, // PENJAHIT
-      ];
+      const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
       ws['!cols'] = [
         { wch: 5 }, { wch: 18 }, { wch: 8 }, { wch: 8 }, { wch: 15 },
-        { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 10 },
-        { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 18 },
+        ...bagianCols.map(() => ({ wch: 14 })),
+        { wch: 18 },
       ];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Detail Order');
@@ -1438,28 +1450,18 @@ function TabWO3({ wo, detailItems: initialItems }: { wo: Row; detailItems: Row[]
       pdf.text(`DETAIL ORDER ITEMS - ${wo.noWo}`, 14, 18);
       pdf.setFontSize(10);
       pdf.text(`Customer: ${wo.customer}`, 14, 26);
+      const penjahitIdx = 5 + bagianCols.length;
       autoTable(pdf, {
         startY: 32,
         head: [[
-          { content: 'NO', rowSpan: 2 },
-          { content: 'NAMA', rowSpan: 2 },
-          { content: 'NP', rowSpan: 2 },
-          { content: 'SIZE', rowSpan: 2 },
-          { content: 'KET', rowSpan: 2 },
-          { content: 'BD', rowSpan: 2 },
-          { content: 'BB', rowSpan: 2 },
-          { content: 'VAR SAMPING', colSpan: 2 },
-          { content: 'LENGAN', colSpan: 2 },
-          { content: 'KERAH', rowSpan: 2 },
-          { content: 'TAGLINE', rowSpan: 2 },
-          { content: 'LIS CELANA', rowSpan: 2 },
-          { content: 'PENJAHIT', rowSpan: 2 },
-        ], [
-          'BD', 'BB', 'KANAN', 'KIRI',
+          'NO', 'NAMA', 'NP', 'SIZE', 'KET',
+          ...bagianCols.map(c => c.header),
+          'PENJAHIT',
         ]],
         body: rows.map((r, i) => [
           i + 1, r.nama, r.np, r.ukuran, r.keterangan,
-          '', '', '', '', '', '', '', '', r.penjahit,
+          ...bagianCols.map(() => ''),
+          r.penjahit,
         ]),
         styles: { fontSize: 7, cellPadding: 2, lineWidth: 0.3, lineColor: [0, 0, 0] },
         headStyles: { fillColor: [30, 58, 95], fontSize: 7, halign: 'center', lineWidth: 0.3, lineColor: [0, 0, 0] },
@@ -1470,7 +1472,7 @@ function TabWO3({ wo, detailItems: initialItems }: { wo: Row; detailItems: Row[]
           2: { cellWidth: 12 },
           3: { cellWidth: 12 },
           4: { cellWidth: 25, halign: 'left' },
-          13: { cellWidth: 25, halign: 'left' },
+          [penjahitIdx]: { cellWidth: 25, halign: 'left' },
         },
       });
       pdf.save(`Detail-Order-${wo.noWo}.pdf`);

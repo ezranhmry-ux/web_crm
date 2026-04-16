@@ -43,6 +43,17 @@ select option {
   color: #d4d4d8;
 }
 
+/* Hide number input spinners */
+.no-spin::-webkit-outer-spin-button,
+.no-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spin {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* Checkbox custom style */
 .stage-check {
   appearance: none;
